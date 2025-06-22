@@ -1,0 +1,61 @@
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 10;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0,0,0,0.4);
+}
+.modal-content {
+  background-color: white;
+  margin: 10% auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%;
+  max-width: 600px;
+}
+.close {
+  color: black;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+.close:hover {
+  color: red;
+  cursor: pointer;
+}
+#calendar {
+  max-width: 90%;
+  margin: 30px auto;
+  margin-bottom: 40px;
+}
+/* 列ヘッダー（日付ラベル）のみを着色 */
+.fc-col-header-cell.fc-day-today {
+  background-color: #F0566E !important;  /* 好みで色調整OK */
+}
+
+/* タイムグリッド側の today 色は消す */
+.fc-day-today {
+  background-color: transparent !important;
+}
+/* 各時間スロットの高さを強制的に小さくする */
+.fc .fc-timegrid-slot {
+  height: 20px !important;
+  min-height: 20px !important;
+  line-height: 1.2 !important;
+}
+
+/* イベントボックスの高さも調整（つぶれ防止） */
+.fc-timegrid-event {
+  padding: 2px 4px !important;
+  font-size: 0.75rem !important;
+}
+
+#reservationEmbed {
+  position: relative;     /* スタッキングコンテキストを作る */
+  z-index: 1;             /* カレンダーより前面に表示 */
+  margin-top: 20px;       /* 好みでさらにすき間 */
+}
