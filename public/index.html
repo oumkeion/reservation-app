@@ -109,7 +109,6 @@
   <button id="toggleAdminMode">管理者モードに切り替える</button>
   <button id="adminBtn">音出し禁止時間の追加</button>
   <button id="logBtn">ログを見る</button>
-  <button id="fixedSlotBtn">固定枠設定</button>
 
   <!-- 1) FullCalendar 描画領域 -->
   <div id="calendar"></div>
@@ -176,8 +175,8 @@
     <div class="modal-content">
       <span id="closeBtn" class="close">&times;</span>
       <h3>予約入力</h3>
-      <label>バンド名: <input type="text" id="bandName"></label><br>
-      <label>記入者名: <input type="text" id="editorNameInput"></label><br>
+      <label>バンド名: <input type="text" id="bandName" placeholder="（必須）"></label><br>
+      <label>記入者名: <input type="text" id="editorNameInput" placeholder="（必須）"></label><br>
       <label>種別:
         <select id="eventType">
           <option value="confirmed">部室確定枠</option>

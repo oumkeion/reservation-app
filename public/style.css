@@ -59,3 +59,26 @@
   z-index: 1;             /* カレンダーより前面に表示 */
   margin-top: 20px;       /* 好みでさらにすき間 */
 }
+
+/* ---- 横スクロール可能に ---- */
+/* FullCalendar の横スクロールコンテナ */
+#calendar .fc-scroller-harness {
+  overflow-x: auto !important;
+  touch-action: pan-x;
+}
+/* 列幅を最低確保 */
+#calendar .fc-timegrid-col {
+  min-width: 120px;
+}
+/* モバイルでドラッグ中もページ全体をスクロールさせない */
+@media (max-width: 767px) {
+  #calendar .fc-timegrid-body,
+  #calendar .fc-timegrid-body .fc-scroller {
+    overscroll-behavior: contain;
+  }
+  /* タイムグリッド内のみテキスト選択禁止 */
+  #calendar {
+    user-select: none !important;
+    -webkit-touch-callout: none !important;
+  }
+}
