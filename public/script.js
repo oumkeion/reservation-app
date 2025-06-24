@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', function () {
     slotDuration: '00:30:00',
     slotMinTime:  '06:00:00',
     slotMaxTime:  '22:00:00',
-    height:       'auto',
+    aspectRatio:  1.6, // スマホ表示で縦長になりすぎないように調整
 
     // タッチ操作
     selectable:           true,
