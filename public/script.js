@@ -52,13 +52,13 @@ document.addEventListener('DOMContentLoaded', function () {
     // 今日の曜日を左端に
     firstDay: today.getDay(),
 
-    // ヘッダーは非表示、左右スワイプだけで次週/前週を表示
+    // ヘッダーのツールバー設定
     headerToolbar: {
-      left: '',
+      left:   'prev,next today',
       center: 'title',
-      right: ''
+      right:  'timeGridWeek,timeGridDay,listWeek'
     },
-
+    
     // １週間分だけ表示
     visibleRange: {
       start: today.toISOString().slice(0,10),

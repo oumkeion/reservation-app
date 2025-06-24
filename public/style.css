@@ -70,13 +70,16 @@
 #calendar .fc-timegrid-col {
   min-width: 120px;
 }
-/* モバイルでドラッグ中もページ全体をスクロールさせない */
+/* ---- モバイル向けの調整 ---- */
 @media (max-width: 767px) {
-  #calendar .fc-timegrid-body,
-  #calendar .fc-timegrid-body .fc-scroller {
-    overscroll-behavior: contain;
+  /* 横スクロールはカレンダー内で、縦スクロールはページに伝播させる */
+  #calendar .fc-scroller-harness {
+    overflow-x: auto !important;
+    touch-action: pan-x;          /* 横スワイプのみカレンダー内 */
+    overscroll-behavior-x: contain;
+    overscroll-behavior-y: auto;  /* 縦ドラッグはページ全体のスクロールを起動 */
   }
-  /* タイムグリッド内のみテキスト選択禁止 */
+    /* タイムグリッド内のみテキスト選択禁止 */
   #calendar {
     user-select: none !important;
     -webkit-touch-callout: none !important;
