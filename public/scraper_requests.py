@@ -10,6 +10,11 @@ BASE      = "https://www.med.osaka-u.ac.jp/pub/resv"
 # スクリプトの場所を基準にhtmlsディレクトリのパスを構築
 OUT_DIR   = os.path.join(os.path.dirname(os.path.abspath(__file__)), "htmls")
 
+# --- 正規表現を事前にコンパイル ---
+CSS_RE = re.compile(r'<link[^>]+rel=["\\]'stylesheet["\\]'[^>]+href=["\\]'([^"]+)["\\]', re.IGNORECASE)
+JS_RE  = re.compile(r'<script[^>]+src=["\\]'([^"]+)["\\]'[^>]*></script>', re.IGNORECASE)
+
+
 def make_session():
     s = requests.Session()
     retries = Retry(total=3, backoff_factor=1,
@@ -34,9 +39,7 @@ def inline_resources(html: str, session: requests.Session) -> str:
             print(f"⚠️ CSSロード失敗 {url}: {e}")
             return ""  # 空に置き換えて続行
         return f"<style>\n{txt}\n</style>"
-    html = re.sub(
-        r'<link[^>]+rel=["\\]'stylesheet["\\]'[^>]+href=["\\]'([^"\\]+)["\\]',
-        repl_css, html, flags=re.IGNORECASE)
+    html = CSS_RE.sub(repl_css, html)
 
     # JS
     def repl_js(m):
@@ -47,9 +50,7 @@ def inline_resources(html: str, session: requests.Session) -> str:
             print(f"⚠️ JSロード失敗 {url}: {e}")
             return ""
         return f"<script>\n{txt}\n</script>"
-    html = re.sub(
-        r'<script[^>]+src=["\\]'([^"\\]+)["\\]'[^>]*></script>',
-        repl_js, html, flags=re.IGNORECASE)
+    html = JS_RE.sub(repl_js, html)
 
     return html
 
@@ -80,7 +81,7 @@ def save_reservation_html(date_str: str):
     resp2.raise_for_status() # HTTPエラーがあれば例外を発生させる
     html = resp2.text.replace(
         "<head>",
-        '<head><base href="https://www.med.osaka-u.ac.jp/pub/resv/">' # Changed to use single quotes for the base href value
+        '<head><base href="https://www.med.osaka-u.ac.jp/pub/resv/">'
     )
     html = inline_resources(html, s)
     with open(out_path, "w", encoding="utf-8") as f:
@@ -124,3 +125,4 @@ if __name__ == "__main__":
             print(f"エラー: {date_str} の取得に失敗しました - {e}")
 
     print("\n処理が完了しました。")
+}
