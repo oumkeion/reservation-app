@@ -11,8 +11,8 @@ BASE      = "https://www.med.osaka-u.ac.jp/pub/resv"
 OUT_DIR   = os.path.join(os.path.dirname(os.path.abspath(__file__)), "htmls")
 
 # --- 正規表現を事前にコンパイル ---
-CSS_RE = re.compile(r'<link[^>]+rel=["\\]'stylesheet["\\]'[^>]+href=["\\]'([^"]+)["\\]', re.IGNORECASE)
-JS_RE  = re.compile(r'<script[^>]+src=["\\]'([^"]+)["\\]'[^>]*></script>', re.IGNORECASE)
+CSS_RE = re.compile(r'<link[^>]+rel=['"]stylesheet['"][^>]+href=['"]([^'"]+)['"]', re.IGNORECASE)
+JS_RE  = re.compile(r'<script[^>]+src=['"]([^'"]+)['"][^>]*></script>', re.IGNORECASE)
 
 
 def make_session():
@@ -81,7 +81,7 @@ def save_reservation_html(date_str: str):
     resp2.raise_for_status() # HTTPエラーがあれば例外を発生させる
     html = resp2.text.replace(
         "<head>",
-        '<head><base href="https://www.med.osaka-u.ac.jp/pub/resv/">'
+        f'<head><base href="{BASE}/">'
     )
     html = inline_resources(html, s)
     with open(out_path, "w", encoding="utf-8") as f:
@@ -124,5 +124,5 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"エラー: {date_str} の取得に失敗しました - {e}")
 
-    print("\n処理が完了しました。")
+    print("\n処理が完了しました.")
 }
