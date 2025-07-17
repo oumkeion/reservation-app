@@ -25,6 +25,11 @@ jobs:
         run: |
           python public/scraper_requests.py
 
+      - name: Debug cat scraper_requests.py
+        run: |
+          echo "=== public/scraper_requests.py ==="
+          sed -n '1,40p' public/scraper_requests.py
+
       - name: Commit & Push HTMLs
         run: |
           git config user.name "github-actions[bot]"
