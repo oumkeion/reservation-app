@@ -11,7 +11,7 @@ BASE      = "https://www.med.osaka-u.ac.jp/pub/resv"
 OUT_DIR   = os.path.join(os.path.dirname(os.path.abspath(__file__)), "htmls")
 
 # --- 正規表現を事前にコンパイル ---
-CSS_RE = re.compile(r'<link[^>]+rel=['"]stylesheet['"][^>]+href=['"]([^'"]+)['"]', re.IGNORECASE)JS_RE  = re.compile(r'<script[^>]+src=['"]([^'"]+)['"][^>]*></script>', re.IGNORECASE)
+CSS_RE = re.compile(    r'<link[^>]+rel=['"]stylesheet['"][^>]+href=['"]([^'"]+)['"]',    re.IGNORECASE)JS_RE = re.compile(    r'<script[^>]+src=['"]([^'"]+)['"][^>]*></script>',    re.IGNORECASE)
 
 
 def make_session():
