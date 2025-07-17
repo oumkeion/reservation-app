@@ -12,11 +12,11 @@ OUT_DIR   = os.path.join(os.path.dirname(os.path.abspath(__file__)), "htmls")
 
 # --- 正規表現を事前にコンパイル ---
 CSS_RE = re.compile(
-    r'<link[^>]+rel=["\\]['\"]stylesheet['\"]["\\]['\"][^>]+href=["\\]['\"]([^\["\\]['\"]]+)["\\]['\"]',
+    r'<link[^>]+rel=["\']stylesheet["\'][^>]+href=["\']([^"]+)["\']',
     re.IGNORECASE
 )
 JS_RE = re.compile(
-    r'<script[^>]+src=["\\]['\"]([^\["\\]['\"]]+)["\\]['\"][^>]*></script>',
+    r'<script[^>]+src=["\']([^"]+)["\'][^>]*></script>',
     re.IGNORECASE
 )
 
