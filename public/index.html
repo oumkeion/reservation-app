@@ -11,97 +11,6 @@
 
   <!-- 自分のスタイルシート -->
   <link rel="stylesheet" href="style.css" />
-
-  <style>
-    /* 1) FullCalendar コンテナ */
-    #calendar {
-      position: relative;
-      z-index: 10;
-      width: 100%;
-      max-width: 900px;
-      margin: 40px auto 0;
-    }
-
-    /* 2) 埋め込みセクション */
-    #reservationEmbed {
-      width: 100%;
-      max-width: 900px;
-      margin: 40px auto 0;
-      height: 50vh;
-      overflow: auto;
-      position: relative;
-      border: 1px solid #ccc;
-      background: #fafafa;
-      padding: 8px;
-    }
-
-    #resvIframe {
-      width: 100%;
-      transform: none;
-      zoom: 1;
-      min-height: 1000px;
-      border: none;
-    }
-    #resvIframe::-webkit-scrollbar {
-      width: 8px;
-    }
-    #resvIframe::-webkit-scrollbar-thumb {
-      background: rgba(0,0,0,0.3);
-      border-radius: 4px;
-    }
-
-    /* 日付セレクタとボタンを整える */
-    #reservationEmbed label,
-    #reservationEmbed input[type="date"],
-    #reservationEmbed button {
-      display: inline-block;
-      vertical-align: middle;
-      margin-right: 8px;
-      margin-bottom: 8px;
-      font-size: 1rem;
-    }
-
-    @media (max-width: 767px) {
-     .modal-content {
-        width: 90% !important;
-        max-width: none !important;
-        margin: 5% auto !important;
-        padding: 16px !important;
-        font-size: 0.9rem;
-      }
-      #calendar {
-        height: auto !important;
-        margin-bottom: 20px !important;
-      }
-
-      .fc-header-toolbar {
-        display: flex !important;
-        flex-wrap: wrap !important;
-      }
-      .fc-header-toolbar .fc-button {
-        flex: 1 1 auto;
-        margin: 2px !important;
-        font-size: 0.8rem !important;
-      }
-      
-      #reservationEmbed {
-        padding: 4px;
-        height: auto !important;
-        margin-bottom: 20px;
-      }
-      #reservationEmbed label,
-      #reservationEmbed input[type="date"],
-      #reservationEmbed button {
-        display: block;
-        width: 100%;
-        margin-right: 0;
-        margin-bottom: 8px;
-      }
-      #resvIframe {
-        min-height: 60vh;
-      }
-    }
-  </style>
 </head>
 
 <body>
@@ -131,6 +40,7 @@
       <span id="logCloseBtn" class="close">&times;</span>
       <h3>操作ログ</h3>
       <pre id="logContent" style="max-height:300px; overflow-y:auto; white-space:pre-wrap;"></pre>
+      <button id="deleteAllLogsBtn" style="display: none; background-color: #f44336; margin-top: 10px;">全ログと予定を削除</button>
     </div>
   </div>
 
@@ -203,8 +113,31 @@
     </div>
   </div>
 
+  <!-- 日付メモ編集モーダル -->
+  <div id="dailyMemoModal" class="modal">
+    <div class="modal-content">
+      <span id="dailyMemoCloseBtn" class="close">&times;</span>
+      <h3 id="dailyMemoDate"></h3>
+      <label for="dailyMemoText">メモ:</label><br>
+      <textarea id="dailyMemoText" rows="5" style="width: 95%; margin-top: 8px;"></textarea><br>
+      <button id="dailyMemoSaveBtn" style="margin-top: 8px;">メモを保存</button>
+      <button id="dailyMemoDeleteBtn" style="margin-top: 8px; background-color: #f44336;">メモを削除</button>
+    </div>
+  </div>
+
   <!-- スクリプト読み込み -->
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+
+  <!-- Firebase SDK の読み込み (v9 compat) -->
+  <!-- Firebase App (コアSDK) は常に必須で、最初に読み込む必要があります -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <!-- 使用したいFirebase製品のSDKを追加します -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+
+  <script src="firebase-config.js"></script>
+
+  <!-- 自分のスクリプトは、ライブラリの読み込みとFirebaseの初期化が終わった後に読み込みます -->
   <script src="script.js"></script>
 </body>
 </html>

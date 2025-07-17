@@ -1,6 +1,17 @@
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', function() {
+  // Firebaseが読み込まれているか確認
+  if (typeof firebase === 'undefined' || typeof firebase.firestore !== 'function') {
+    console.error("Firebaseが正しく初期化されていません。firebase-config.jsの読み込みと設定内容を確認してください。");
+    alert("アプリケーションの読み込みに失敗しました。設定を確認してください。");
+    return; // Firebaseがなければ処理を中断
+  }
+
+  // Firebaseのインスタンスを初期化
+  const db = firebase.firestore();
+
   // 1) 今日の日付を先に定義
   const today = new Date();
+  const calendarEl = document.getElementById('calendar');
 
   // 時刻フォーマットヘルパー
   function formatTime(date) {
@@ -25,7 +36,6 @@ document.addEventListener('DOMContentLoaded', function () {
   const detailComment       = document.getElementById('detailComment');
   const detailEditor        = document.getElementById('detailEditor');
   const deleteEventBtn      = document.getElementById('deleteEventBtn');
-  const calendarEl          = document.getElementById('calendar');
   const modal               = document.getElementById('modal');
   const adminModal          = document.getElementById('adminModal');
   const logModal            = document.getElementById('logModal');
@@ -40,116 +50,182 @@ document.addEventListener('DOMContentLoaded', function () {
   const saveBtn             = document.getElementById('saveBtn');
   const bandNameInput       = document.getElementById('bandName');
   const commentInput        = document.getElementById('commentInput');
+  const editorNameInput     = document.getElementById('editorNameInput');
   const eventTypeInput      = document.getElementById('eventType');
   const logCloseBtn         = document.getElementById('logCloseBtn');
   const logContent          = document.getElementById('logContent');
+  const deleteAllLogsBtn    = document.getElementById('deleteAllLogsBtn');
 
+  // 日付メモモーダルの要素取得
+  const dailyMemoModal = document.getElementById('dailyMemoModal');
+  const dailyMemoCloseBtn = document.getElementById('dailyMemoCloseBtn');
+  const dailyMemoDateEl = document.getElementById('dailyMemoDate');
+  const dailyMemoTextEl = document.getElementById('dailyMemoText');
+  const dailyMemoSaveBtn = document.getElementById('dailyMemoSaveBtn');
+  const dailyMemoDeleteBtn = document.getElementById('dailyMemoDeleteBtn');
+
+  let currentUser = null; // ログイン中のユーザー情報を保持
   let isAdminMode = false;
   let selectedStart, selectedEnd;
+  let dailyMemos = {};
+  let currentEditingDate = null;
 
-  // --- FullCalendar 初期化 ---
-  const calendar = new FullCalendar.Calendar(calendarEl, {
-    // 今日の曜日を左端に
-    firstDay: today.getDay(),
+  // カレンダー要素が存在する場合のみ初期化処理を実行
+  if (calendarEl) {
+    // --- FullCalendar 初期化 ---
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+      // 今日の曜日を左端に
+      firstDay: today.getDay(),
 
-    // ヘッダーのツールバー設定
-    headerToolbar: {
-      left:   'prev,next today',
-      center: 'title',
-      right:  'timeGridWeek,timeGridDay,listWeek'
-    },
-    
-    // １週間分だけ表示
-    visibleRange: {
-      start: today.toISOString().slice(0,10),
-      end:   new Date(
-               today.getFullYear(),
-               today.getMonth(),
-               today.getDate() + 7
-             ).toISOString().slice(0,10)
-    },
+      // ヘッダーのツールバー設定
+      headerToolbar: {
+        left:   'prev,next today',
+        center: 'title',
+        right:  'timeGridWeek,timeGridDay,listWeek'
+      },
+      
+      // グリッド設定
+      initialView: 'timeGridWeek',
+      slotDuration: '00:30:00',
+      slotMinTime:  '06:00:00',
+      slotMaxTime:  '22:00:00',
+      aspectRatio:  1.2, // スマホ表示で縦長になりすぎないように調整
 
-    // グリッド設定
-    initialView: 'timeGridWeek',
-    slotDuration: '00:30:00',
-    slotMinTime:  '06:00:00',
-    slotMaxTime:  '22:00:00',
-    aspectRatio:  1.6, // スマホ表示で縦長になりすぎないように調整
+      // タッチ操作
+      selectable:           true,
+      selectLongPressDelay: 300,
+      longPressDelay:       300,
+      editable:             false,
 
-    // タッチ操作
-    selectable:           true,
-    selectLongPressDelay: 300,
-    longPressDelay:       300,
-    editable:             false,
+      // 日時選択時
+      select: info => {
+        selectedStart = info.startStr;
+        selectedEnd   = info.endStr;
+        modal.style.display = 'block';
+        // モーダルが開いたときにフォームの状態をリセットし、
+        // バリデーションを初期実行してボタンを無効化する
+        bandNameInput.value = '';
+        commentInput.value = '';
+        editorNameInput.value = '';
+        eventTypeInput.selectedIndex = 0;
+        validateModalInputs();
+      },
 
-    // 日時選択時
-    select: info => {
-      selectedStart = info.startStr;
-      selectedEnd   = info.endStr;
-      modal.style.display = 'block';
-    },
+      // 既存イベントクリック時
+      eventClick: info => {
+        const ev       = info.event;
+        const type     = ev.extendedProps.type;
+        const isProt   = (type === EVENT_TYPES.NO_SOUND || type === EVENT_TYPES.FIXED);
+        const canDel   = isAdminMode || !isProt;
 
-    // 既存イベントクリック時
-    eventClick: info => {
-      const ev       = info.event;
-      const type     = ev.extendedProps.type;
-      const isProt   = (type === EVENT_TYPES.NO_SOUND || type === EVENT_TYPES.FIXED);
-      const canDel   = isAdminMode || !isProt;
+        detailTitle.textContent   = `バンド名：${ev.title}`;
+        detailTime.textContent    = `時間：${formatTime(ev.start)} ～ ${formatTime(ev.end)}`;
+        detailComment.textContent = `コメント：${ev.extendedProps.comment || '（なし）'}`;
+        detailEditor.textContent  = `記入者：${ev.extendedProps.editor || '（不明）'}`;
 
-      detailTitle.textContent   = `バンド名：${ev.title}`;
-      detailTime.textContent    = `時間：${formatTime(ev.start)} ～ ${formatTime(ev.end)}`;
-      detailComment.textContent = `コメント：${ev.extendedProps.comment || '（なし）'}`;
-      detailEditor.textContent  = `記入者：${ev.extendedProps.editor || '（不明）'}`;
+        // 削除ボタンの制御
+        if (canDel) {
+          deleteEventBtn.style.display = 'inline-block';
+          deleteEventBtn.onclick = () => {
+            const deleterName = prompt('削除を実行するあなたの名前を入力してください:');
+            if (!deleterName || deleterName.trim() === '') {
+              return alert('削除者名の入力は必須です。');
+            }
+            if (!confirm(`「${ev.title}」の予約を本当に削除しますか？`)) return;
 
-      // 削除ボタンの制御
-      if (canDel) {
-        deleteEventBtn.style.display = 'inline-block';
-        deleteEventBtn.onclick = () => {
-          const deleterName = prompt('削除を実行するあなたの名前を入力してください:');
-          if (!deleterName || deleterName.trim() === '') {
-            return alert('削除者名の入力は必須です。');
-          }
-          if (!confirm(`「${ev.title}」の予約を本当に削除しますか？`)) return;
-
-          addLogEntry("削除", ev, deleterName.trim()); // ログを先に記録
-          ev.remove();
-          let evs = JSON.parse(localStorage.getItem('events') || '[]');
-          evs = evs.filter(e => e.id !== ev.id); // IDでイベントを特定して削除
-          localStorage.setItem('events', JSON.stringify(evs));
-          eventDetailModal.style.display = 'none';
+            // Firestoreからイベントを削除（onSnapshotがカレンダーからの削除をハンドル）
+            db.collection('events').doc(ev.id).delete().then(() => {
+              addLogEntry("削除", ev, deleterName.trim()); // 削除成功後にログを記録
+              alert("予約を削除しました。");
+            }).catch(error => alert("削除に失敗しました: " + error));
+            eventDetailModal.style.display = 'none';
+          };
+        } else {
+          deleteEventBtn.style.display = 'none';
+        }
+        eventDetailModal.style.display = 'block';
+      },
+      
+      // 描画後スタイル調整
+      eventDidMount: info => {
+        const type    = info.event.extendedProps.type;
+        const comment = info.event.extendedProps.comment || '';
+        const cmap    = {
+          [EVENT_TYPES.PERSONAL]: {bg:'#87CEEB'},
+          [EVENT_TYPES.CONFIRMED]:{bg:'#FFB6C1'},
+          [EVENT_TYPES.REQUEST]:  {bg:'#CDE6C7'},
+          [EVENT_TYPES.FIXED]:    {bg:'#FFF5D2'},
+          [EVENT_TYPES.NO_SOUND]: {bg:'#B0B0B0'}
         };
-      } else {
-        deleteEventBtn.style.display = 'none';
+        const cols = cmap[type];
+        if (cols) {
+          info.el.style.backgroundColor = cols.bg;
+          info.el.style.borderColor     = cols.bg;
+        }
+        if (type === EVENT_TYPES.NO_SOUND) info.el.style.opacity = '0.5';
+        if (comment) info.el.setAttribute('title', comment);
+      },
+
+      // カレンダーのビューが初期化・変更されたときに呼ばれる
+      datesSet: function(dateInfo) {
+        fetchAndDisplayDailyMemos();
+      },
+
+      // 各日付セルが描画されたときの処理
+      dayCellDidMount: function(arg) {
+        // このセルが終日スロットの行に属しているか確認
+        // timeGridビューの終日部分はdayGridとしてレンダリングされる
+        const isAllDaySlot = arg.el.closest('.fc-daygrid-body');
+
+        if (isAllDaySlot) {
+          const dateStr = arg.date.toISOString().split('T')[0];
+          // .fc-daygrid-day-frame は日表示の枠
+          const frame = arg.el.querySelector('.fc-daygrid-day-frame');
+          if (!frame) return;
+
+          // 既存の要素がなければ追加する
+          if (!frame.querySelector('.daily-memo-container')) {
+            // メモ表示用のコンテナを追加
+            const memoContainer = document.createElement('div');
+            memoContainer.classList.add('daily-memo-container');
+            memoContainer.setAttribute('data-date', dateStr);
+            frame.appendChild(memoContainer);
+          }
+
+          if (!frame.querySelector('.daily-memo-edit-icon')) {
+            // 編集アイコンを追加（CSSで管理者モード時のみ表示）
+            const editIcon = createMemoEditIcon(dateStr);
+            frame.appendChild(editIcon);
+          }
+        }
       }
-      eventDetailModal.style.display = 'block';
-    },
+    });
 
-    // 描画後スタイル調整
-    eventDidMount: info => {
-      const type    = info.event.extendedProps.type;
-      const comment = info.event.extendedProps.comment || '';
-      const cmap    = {
-        [EVENT_TYPES.PERSONAL]: {bg:'#87CEEB',fg:'#000'},
-        [EVENT_TYPES.CONFIRMED]:{bg:'#FFB6C1',fg:'#000'},
-        [EVENT_TYPES.REQUEST]:  {bg:'#CDE6C7',fg:'#000'},
-        [EVENT_TYPES.FIXED]:    {bg:'#FFF5D2',fg:'#000'},
-        [EVENT_TYPES.NO_SOUND]: {bg:'#B0B0B0',fg:'#000'}
-      };
-      const cols = cmap[type];
-      if (cols) {
-        info.el.style.backgroundColor = cols.bg;
-        info.el.style.borderColor     = cols.bg;
-        info.el.style.setProperty('color', cols.fg, 'important');
-      }
-      if (type === EVENT_TYPES.NO_SOUND) info.el.style.opacity = '0.5';
-      if (comment) info.el.setAttribute('title', comment);
-    },
+    calendar.render();
 
-    // ローカルストレージ読み込み
-    events: JSON.parse(localStorage.getItem('events')||'[]'),
-  });
+    // --- Firestoreからイベントをリアルタイムで読み込み ---
+    db.collection('events').onSnapshot(snapshot => {
+      snapshot.docChanges().forEach(change => {
+        const eventData = { id: change.doc.id, ...change.doc.data() };
+        const existingEvent = calendar.getEventById(change.doc.id);
 
-  calendar.render();
+        if (change.type === 'added') {
+          if (!existingEvent) {
+            calendar.addEvent(eventData);
+          }
+        }
+        if (change.type === 'modified') {
+          if (existingEvent) existingEvent.remove();
+          calendar.addEvent(eventData);
+        }
+        if (change.type === 'removed') {
+          if (existingEvent) existingEvent.remove();
+        }
+      });
+    }, error => console.error("イベントの読み込みエラー: ", error));
+  } else {
+    console.error("カレンダーを描画するための要素 #calendar が見つかりません。");
+  }
 
     // --- 埋め込みカレンダー 日付入力 & 表示 ---
   const dateInput = document.getElementById('resvDate');
@@ -161,13 +237,30 @@ document.addEventListener('DOMContentLoaded', function () {
   dateInput.value = dateInput.min;
 
   // 静的HTML読み込みに切り替え
-  loadBtn.addEventListener('click', () => {
+  async function loadIframeContent() {
     const d = dateInput.value;
     if (!d) return alert('日付を選択してください');
-    document.getElementById('resvIframe').src = `/htmls/${d}.html`;
-  });
-  loadBtn.click();
-  
+    const iframe = document.getElementById('resvIframe');
+    const url = `/htmls/${d}.html`;
+
+    // fetch APIで事前にファイルの存在を確認
+    try {
+      const response = await fetch(url);
+      if (response.ok) {
+        // ファイルが存在すれば、iframeのsrcに設定
+        iframe.src = url;
+      } else {
+        // ファイルが存在しない場合は、エラーメッセージを直接iframeに書き込む
+        iframe.srcdoc = `<p style="padding: 1em; text-align: center; color: #555;">${d} の予約情報は見つかりませんでした。</p>`;
+      }
+    } catch (error) {
+      console.error("iframeの読み込みエラー:", error);
+      iframe.srcdoc = `<p style="padding: 1em; text-align: center; color: #d32f2f;">予約情報の読み込み中にエラーが発生しました。</p>`;
+    }
+  }
+  loadBtn.addEventListener('click', loadIframeContent);
+  loadIframeContent(); // ページ読み込み時に実行
+
   // --- 固定枠モーダル & ロジック ---
   const fixedSlotModal = document.getElementById('fixedSlotModal');
   const fixedSlotCloseBtn = document.getElementById('fixedSlotCloseBtn');
@@ -217,7 +310,7 @@ document.addEventListener('DOMContentLoaded', function () {
       const end = new Date(`${dateString}T${endTime}`);
 
       const newEvent = {
-        id: Date.now().toString() + Math.random().toString(36).substr(2, 9), // ユニークIDを追加
+        // idはFirestoreが自動で採番するので不要
         title: bandName,
         start: start.toISOString(),
         end: end.toISOString(),
@@ -239,17 +332,60 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  toggleAdminModeBtn.addEventListener('click', function () {
-    if (!isAdminMode) {
-      const pw = prompt("管理者パスワードを入力してください:");
-      if (pw !== "oumkeion_2025") {
-        alert("パスワードが違います。");
-        return;
+  // --- Firebase Authentication ---
+
+  // 認証状態の変更を監視
+  firebase.auth().onAuthStateChanged(async (user) => { // asyncを追加してawaitを使えるようにする
+    currentUser = user; // ログイン状態をグローバル変数に保持
+    let isAuthorizedAdmin = false; // デフォルトは非管理者
+
+    if (user) {
+      // Firestoreの'admins'コレクションにユーザーのメールアドレスのドキュメントが存在するか確認
+      const adminDoc = await db.collection('admins').doc(user.email).get();
+      if (adminDoc.exists) {
+        isAuthorizedAdmin = true;
       }
     }
-    isAdminMode = !isAdminMode;
-    toggleAdminModeBtn.textContent = isAdminMode ? "管理者モード（ON）" : "管理者モードに切り替える";
+    
+    isAdminMode = isAuthorizedAdmin;
+    document.body.classList.toggle('admin-mode', isAdminMode);
+    toggleAdminModeBtn.textContent = isAdminMode ? "ログアウト" : "管理者ログイン";
     updateFixedOptionVisibility();
+
+    // もしGoogleアカウントでログインはしているが、許可リストにないユーザーだった場合
+    if (user && !isAuthorizedAdmin) {
+      alert(`「${user.email}」は管理者として登録されていません。自動的にログアウトします。`);
+      firebase.auth().signOut(); // 強制的にログアウト
+    }
+  });
+
+  // 管理者モード切替ボタンの処理をFirebase Googleログイン用に変更
+  toggleAdminModeBtn.addEventListener('click', () => {
+    const auth = firebase.auth();
+    if (isAdminMode) {
+      // ログイン中ならログアウト処理
+      auth.signOut().then(() => {
+        alert("ログアウトしました。");
+      }).catch(error => {
+        console.error("ログアウトエラー", error);
+        alert("ログアウトに失敗しました。");
+      });
+    } else {
+      // 未ログインならGoogleログイン処理
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider)
+        .then((result) => {
+          // ログイン成功後のチェックは onAuthStateChanged が自動で行うので、
+          // ここではシンプルに成功メッセージを表示するだけでも良い
+          const user = result.user;
+          // isAuthorizedAdmin の判定は onAuthStateChanged に任せる
+          // ここで改めてチェックする必要はありません
+          console.log(`ログイン試行成功: ${user.displayName} (${user.email})`);
+        }).catch((error) => {
+          console.error("Googleログインエラー:", error);
+          alert("Googleログインに失敗しました。ポップアップがブロックされていないか確認してください。");
+        });
+    }
   });
 
   adminBtn.addEventListener('click', function () {
@@ -268,15 +404,17 @@ document.addEventListener('DOMContentLoaded', function () {
   adminSaveBtn.addEventListener('click', function () {
     const start = new Date(adminStartInput.value).toISOString();
     const end = new Date(adminEndInput.value).toISOString();
+    const editorName = currentUser ? currentUser.displayName || currentUser.email : "管理者";
     const newEvent = {
-      id: Date.now().toString() + Math.random().toString(36).substr(2, 9), // ユニークIDを追加
+      // idはFirestoreが自動で採番するので不要
       title: "音出し禁止",
       start: start,
       end: end,
       allDay: false,
       extendedProps: {
         type: EVENT_TYPES.NO_SOUND,
-        comment: ""
+        comment: "",
+        editor: editorName
       }
     };
     addEventToStorageAndCalendar(newEvent);
@@ -325,19 +463,31 @@ document.addEventListener('DOMContentLoaded', function () {
     return null; // 問題なし
   }
 
+  // --- 予約モーダルの入力バリデーション ---
+  function validateModalInputs() {
+    const title = bandNameInput.value.trim();
+    const editor = editorNameInput.value.trim();
+    // バンド名と記入者名が両方入力されている場合のみ保存ボタンを有効化
+    saveBtn.disabled = !title || !editor;
+  }
+
+  // 予約モーダル内の入力フィールドに変更があるたびにバリデーションを実行
+  bandNameInput.addEventListener('input', validateModalInputs);
+  editorNameInput.addEventListener('input', validateModalInputs);
+
   closeBtn.addEventListener('click', () => modal.style.display = 'none');
 
   saveBtn.addEventListener('click', function () {
     const title = bandNameInput.value.trim();
     const comment = commentInput.value.trim();
-    const editor = document.getElementById('editorNameInput').value.trim();
-    const type = eventTypeInput.value;
-    const now = new Date();
+    const editor = editorNameInput.value.trim();
+    const type  = eventTypeInput.value;
+    const now   = new Date();
     const start = new Date(selectedStart);
-    const end = new Date(selectedEnd);
+    const end   = new Date(selectedEnd);
   
-    if (!title || title === "無名" || !editor) {
-      alert("バンド名を入力してください");
+    if (!title || !editor) { // このチェックは念のため残す
+      alert("バンド名と記入者名は必須です。");
       return;
     }
   
@@ -349,7 +499,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   
     const newEvent = {
-      id: Date.now().toString() + Math.random().toString(36).substr(2, 9), // ユニークIDを追加
+      // idはFirestoreが自動で採番するので不要
       title: title,
       start: selectedStart,
       end: selectedEnd,
@@ -369,16 +519,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // イベントをストレージとカレンダーに追加する共通関数
   function addEventToStorageAndCalendar(event, action = "予約追加") {
-    const events = JSON.parse(localStorage.getItem('events') || '[]');
-    events.push(event);
-    localStorage.setItem('events', JSON.stringify(events));
-    calendar.addEvent(event);
-    addLogEntry(action, event, event.extendedProps.editor);
+    // Firestoreにイベントを追加（onSnapshotがカレンダーへの追加をハンドルする）
+    db.collection('events').add(event).then(docRef => {
+      console.log("イベント追加成功: ", docRef.id);
+      addLogEntry(action, { id: docRef.id, ...event }, event.extendedProps.editor);
+    }).catch(error => {
+      console.error("イベント追加エラー: ", error);
+      alert("予約の追加に失敗しました。");
+    });
   }
   
   // ログを追加（コメントも含める）
   function addLogEntry(action, eventObject, editorName) {
-    const logs = JSON.parse(localStorage.getItem('logs') || '[]');
     const entry = {
       timestamp: new Date().toLocaleString(),
       action,
@@ -389,20 +541,155 @@ document.addEventListener('DOMContentLoaded', function () {
       comment: eventObject.extendedProps?.comment || "",
       editor: editorName || "" // ログには実行者名を記録
     };
-    logs.push(entry);
-    localStorage.setItem('logs', JSON.stringify(logs));
+    // Firestoreにログを追加
+    db.collection('logs').add(entry).catch(error => {
+      console.error("ログの記録エラー: ", error);
+    });
   }
   
   // ログ表示処理
   logBtn.addEventListener('click', () => {
-    const logs = JSON.parse(localStorage.getItem('logs') || '[]');
-    logContent.textContent = logs.map(log =>
-      `[${log.timestamp}] ${log.action}: ${log.title} (${log.type}) ${log.start} → ${log.end}` +
-      `${log.editor ? "｜記入者: " + log.editor : ""}` +
-      `${log.comment ? "｜コメント: " + log.comment : ""}`
-    ).join('\n') || "ログはありません。";
+    // Firestoreからログを取得
+    db.collection('logs').orderBy('timestamp', 'desc').get().then(querySnapshot => {
+      const logs = querySnapshot.docs.map(doc => doc.data());
+      logContent.textContent = logs.map(log =>
+        `[${log.timestamp}] ${log.action}: ${log.title} (${log.type}) ${log.start} → ${log.end}` +
+        `${log.editor ? "｜記入者: " + log.editor : ""}` +
+        `${log.comment ? "｜コメント: " + log.comment : ""}`
+      ).join('\n') || "ログはありません。";
+    }).catch(error => logContent.textContent = "ログの読み込みに失敗しました: " + error);
+    // 管理者モードの場合のみ、全削除ボタンを表示
+    deleteAllLogsBtn.style.display = isAdminMode ? 'block' : 'none';
+
     logModal.style.display = 'block';
   });
   
   logCloseBtn.addEventListener('click', () => logModal.style.display = 'none');
+
+  // 全ログと予定を削除する処理
+  deleteAllLogsBtn.addEventListener('click', () => {
+    if (!isAdminMode) {
+      alert('この操作は管理者のみ可能です。');
+      return;
+    }
+    if (confirm('本当に全てのログと予定が削除されますがよろしいですか？\nこの操作は元に戻せません。')) {
+      // Firestoreの全ログと予定を削除（バッチ処理）
+      const deleteCollection = async (collectionPath) => {
+        const collectionRef = db.collection(collectionPath);
+        const querySnapshot = await collectionRef.get();
+        const batch = db.batch();
+        querySnapshot.forEach(doc => {
+          batch.delete(doc.ref);
+        });
+        return batch.commit();
+      };
+
+      Promise.all([deleteCollection('events'), deleteCollection('logs'), deleteCollection('dailyMemos')])
+        .then(() => {
+          alert('全てのログと予定、メモを削除しました。');
+          logContent.textContent = "ログはありません。";
+          logModal.style.display = 'none';
+        }).catch(error => alert("削除中にエラーが発生しました: " + error));
+    }
+  });
+
+  // --- 日付メモ機能 ---
+
+  /**
+   * メモ編集用のアイコン(📝)を生成します。
+   * @param {string} dateStr - 対象の日付 (YYYY-MM-DD)
+   * @returns {HTMLElement} 生成された<span>要素
+   */
+  function createMemoEditIcon(dateStr) {
+    const editIcon = document.createElement('span');
+    editIcon.innerHTML = '📝';
+    editIcon.classList.add('daily-memo-edit-icon');
+    editIcon.title = 'この日のメモを編集';
+    editIcon.onclick = (e) => {
+      e.stopPropagation(); // 親要素へのイベント伝播を停止
+      openDailyMemoModal(dateStr);
+    };
+    return editIcon;
+  }
+
+  /**
+   * localStorageから日次メモを読み込み、カレンダーの終日スロットに表示します。
+   */
+  function fetchAndDisplayDailyMemos() {
+    // Firestoreからメモをリアルタイムで取得
+    db.collection('dailyMemos').onSnapshot(snapshot => {
+      dailyMemos = {};
+      snapshot.forEach(doc => {
+        dailyMemos[doc.id] = doc.data().text;
+      });
+      document.querySelectorAll('.daily-memo-container').forEach(container => {
+        const dateStr = container.getAttribute('data-date');
+        container.textContent = dailyMemos[dateStr] || '';
+        container.style.display = dailyMemos[dateStr] ? 'block' : 'none';
+      });
+    }, error => console.error("日次メモの読み込みエラー: ", error));
+  }
+  // アプリケーション開始時にメモを読み込む
+  fetchAndDisplayDailyMemos();
+  function openDailyMemoModal(dateStr) {
+    currentEditingDate = dateStr;
+    dailyMemoDateEl.innerText = `${dateStr} のメモ`;
+    dailyMemoTextEl.value = dailyMemos[dateStr] || '';
+    dailyMemoModal.style.display = 'block';
+  }
+
+  // メモ編集モーダルの閉じるボタン
+  dailyMemoCloseBtn.onclick = () => {
+    dailyMemoModal.style.display = 'none';
+  };
+
+  // メモを保存するボタン
+  dailyMemoSaveBtn.onclick = () => {
+    if (!currentEditingDate) return;
+    const memoText = dailyMemoTextEl.value.trim();
+
+    if (!memoText) {
+      deleteDailyMemo(); // メモが空なら削除として扱う
+      return;
+    }
+
+    // Firestoreにメモを保存（ドキュメントIDを日付にする）
+    db.collection('dailyMemos').doc(currentEditingDate).set({ text: memoText })
+      .then(() => {
+        addLogEntry("メモ更新", { title: `[${currentEditingDate}] ${memoText}` }, "管理者");
+        dailyMemoModal.style.display = 'none';
+      }).catch(error => {
+        alert("メモの保存に失敗しました: " + error);
+      });
+  };
+
+  // メモを削除するボタン
+  dailyMemoDeleteBtn.onclick = () => {
+    if (!currentEditingDate) return;
+    if (confirm(`${currentEditingDate} のメモを本当に削除しますか？`)) {
+      deleteDailyMemo();
+    }
+  };
+
+  function deleteDailyMemo() {
+    if (!currentEditingDate) return;
+    // Firestoreからメモを削除
+    db.collection('dailyMemos').doc(currentEditingDate).delete()
+      .then(() => {
+        addLogEntry("メモ削除", { title: `[${currentEditingDate}]` }, "管理者");
+        dailyMemoModal.style.display = 'none';
+      }).catch(error => {
+        alert("メモの削除に失敗しました: " + error);
+      });
+  }
+
+  // モーダル外クリックで閉じる処理
+  window.onclick = function(event) {
+    if (event.target == modal) modal.style.display = "none";
+    if (event.target == adminModal) adminModal.style.display = "none";
+    if (event.target == logModal) logModal.style.display = "none";
+    if (event.target == fixedSlotModal) fixedSlotModal.style.display = "none";
+    if (event.target == eventDetailModal) eventDetailModal.style.display = "none";
+    if (event.target == dailyMemoModal) dailyMemoModal.style.display = "none";
+  }
 });

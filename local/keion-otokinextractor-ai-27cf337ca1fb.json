@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "keion-otokinextractor-ai",
+  "private_key_id": "27cf337ca1fb206a8b749e37285618ed34f56c6d",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDcka2vCtJ/z9+z\n/y0Klpjl4/WayMTEOUaGb/kjvUf2ktK72n5iMzcBOjomQfsBdJ+PIbQBLIyvY+wM\n76lDarhbxOrSDGoPINgeSgPluQIpkGAvEdnMTELhfszeHx153Y84H6rAEoP2oJhF\ngfd3om3O0B64p0A2/BO0pC/oc5r9wWTLXbkD6gSEG3R3FoMnRqBh7LF/czENBlI+\nc3UKJAs3emFYU+1twcFQfnx4IHY7dQ1Lni6mJiTebUCRQSu2zN1CR+c7V9+DKy86\n1dXoX2Qrx0KcZs59loDXl8qA9hfsEDoL26w+7Zbs/WNdUfPSquQ14MHo8tzxPkXj\n6TQ6tLmtAgMBAAECggEAFawIAWpHeIt3ktCrH56LHhDMnGLHAp4QvJDaopUB3HZc\nrQcw4nvfFwhzl41lbk/ZME/Cx1gV5/3MvxClSZx+H3Y1Dw0X4Vimzi2+PZ90rkTN\n+TyrG78P1ebcQPmUWdmtLXnfEHRBRxr3GzfulXCo6BMxkY8ivhmn41iROdPHZ3tJ\nsuPbzSWL+uyrOruqG7TQK5dxv9tSXHbQkWzTnLLLe2O9/tbbHcyJcn3IdTb5olz7\nC1Luov9dBdeXPF2BhvMXwjFBq1Y1RdAe1yqKVLNAtWEMG1fwBWn4h7jFiHeIBrTE\ne/WYCQOvrZxQu60gEbVI+j1nLFBSG8O0n6v0TO6VeQKBgQDzfxe39VSUirkmMkXD\nVpBQGJveNgJjc+KIa47Rle+MkWXt6PsAWiH8qUZQKrWSu4+MmSVSuv8NxxQCfRkw\nRNWKGiU992HkW9XdrflmUZ9BgXiL5UHRLWIOhi5u8VHLoNZJVeQkzIGAcLQTkJvI\nvGl9tCz0D50arA0E8qs5XZDT/wKBgQDn5TD8U2nYzesjfS4P6ICfMtRPbo5s+VQJ\nh4ORIdd1k75dVY1F1pmESaOAi3V7oY7wPUzCIhhTqEzE9U2EDdYxhoBiUVmjNpjZ\nyBGRyE16IQ3aWPLDeziHxZQw3gYu8dm8vAh94aSlV6HEhcsJcm9N4ISLcRbZPuRT\nBCSQXOgCUwKBgGTkTVyg35no3Qyxmex1arh1aegp8tVoh/3Eq1m2SZqyCE0K0y3z\nKs/5B7Rh7fhNlQ5Jyog8CUCZM3ZQhWZVrzFY4gOKBFrNnpEK7CL0QQuwbNVyedIF\nfvLLsGOxxBWeoAuk9jI1NpeUm1jb+2CyiPdX96Rs78jEb2SUdFQBq+fbAoGBAKFl\nffOQZrHzl71qiZ2e1651pRjnvI8R9TBwtdxULm5x9uNlAN9jnhNZYUe9SHZUmnSQ\nZZUUP9Qx5cSLankHXFW55C8JqZaUEEw7GCdbvrjKuqaGk+gEIfM1S4+7Z5hS0ZWv\nVUWvv3UoibmK2SZpFBiis/2NJzbqs+Unk/85+mxrAoGBALF5gF9qwJDxBG0Fs2ps\n/ULsDipH0R7PtsADJ5xTUc0xoeAK6r72vlNmoCT2f2BcdzsRRH7p5dlsyg7rUhNl\ngaqwlwyTg0yAovANIeeFx7xHIy3N+L6RNpXnJzb3qtTPi9Wpj5lhBabxOT/OEva3\nrngUSqVN5yZuZnfS2APmNEmE\n-----END PRIVATE KEY-----\n",
+  "client_email": "otokin-extractor@keion-otokinextractor-ai.iam.gserviceaccount.com",
+  "client_id": "117777162303905219170",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/otokin-extractor%40keion-otokinextractor-ai.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

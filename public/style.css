@@ -27,10 +27,12 @@
   color: red;
   cursor: pointer;
 }
-#calendar {
-  max-width: 90%;
-  margin: 30px auto;
-  margin-bottom: 40px;
+
+/* 無効化されたボタンのスタイルを追加 */
+button:disabled {
+  background-color: #cccccc;
+  color: #666666;
+  cursor: not-allowed;
 }
 /* 列ヘッダー（日付ラベル）のみを着色 */
 .fc-col-header-cell.fc-day-today {
@@ -84,4 +86,134 @@
     user-select: none !important;
     -webkit-touch-callout: none !important;
   }
+}
+
+/* 1) FullCalendar コンテナ */
+#calendar {
+  width: 100%;
+  max-width: 900px;
+  margin: 40px auto;
+  position: relative;
+  z-index: 1; /* 埋め込みカレンダーよりは奥に */
+}
+
+/* 2) 埋め込みセクション */
+#reservationEmbed {
+  width: 100%;
+  max-width: 900px;
+  margin: 40px auto 0;
+  height: 50vh;
+  overflow: auto;
+  position: relative;
+  border: 1px solid #ccc;
+  background: #fafafa;
+  padding: 8px;
+}
+
+#resvIframe {
+  width: 100%;
+  transform: none;
+  zoom: 1;
+  min-height: 1000px;
+  border: none;
+}
+#resvIframe::-webkit-scrollbar {
+  width: 8px;
+}
+#resvIframe::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.3);
+  border-radius: 4px;
+}
+
+/* 日付セレクタとボタンを整える */
+#reservationEmbed label,
+#reservationEmbed input[type="date"],
+#reservationEmbed button {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 8px;
+  margin-bottom: 8px;
+  font-size: 1rem;
+}
+
+@media (max-width: 767px) {
+ .modal-content {
+    width: 90% !important;
+    max-width: none !important;
+    margin: 5% auto !important;
+    padding: 16px !important;
+    font-size: 0.9rem;
+  }
+  #calendar {
+    height: auto !important;
+    margin-bottom: 20px !important;
+  }
+
+  .fc-header-toolbar {
+    display: flex !important;
+    flex-wrap: wrap !important;
+  }
+  .fc-header-toolbar .fc-button {
+    flex: 1 1 auto;
+    margin: 2px !important;
+    font-size: 0.8rem !important;
+  }
+  
+  #reservationEmbed {
+    padding: 4px;
+    height: auto !important;
+    margin-bottom: 20px;
+  }
+  #reservationEmbed label,
+  #reservationEmbed input[type="date"],
+  #reservationEmbed button {
+    display: block;
+    width: 100%;
+    margin-right: 0;
+    margin-bottom: 8px;
+  }
+  #resvIframe {
+    min-height: 60vh;
+  }
+}
+
+/* 日付ごとのメモ */
+.fc-daygrid-day-frame {
+  position: relative; /* 編集アイコンの配置基準 */
+  min-height: 3em; /* メモ表示領域の確保 */
+}
+
+.daily-memo-container {
+  /* メモは誰でも見れるように、常に表示（JSで内容がある場合のみ） */
+  font-size: 0.8em;
+  color: #333;
+  background-color: #fffacd; /* LemonChiffon */
+  padding: 3px 5px;
+  border-radius: 4px;
+  margin: 2px;
+  white-space: normal; /* 自動で折り返す */
+  word-wrap: break-word;
+  display: none; /* JSでメモがある場合のみ表示をblockにする */
+}
+
+.daily-memo-edit-icon {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  cursor: pointer;      
+  display: none; /* 管理者モードでのみ表示 */
+  color: #039be5;
+  z-index: 5;
+}
+
+/* 管理者モードの時だけ編集アイコンを表示 */
+body.admin-mode .daily-memo-edit-icon {
+  display: block;
+}
+
+/* FullCalendarのイベント文字色を強制的に黒にする */
+.fc-event-main,
+.fc-event-title,
+.fc-event-time {
+  color: black !important;
 }

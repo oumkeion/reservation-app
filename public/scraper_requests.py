@@ -7,7 +7,8 @@ from urllib3.util.retry import Retry
 USER_ID   = "1188"
 PASSWORD  = "cB8V"
 BASE      = "https://www.med.osaka-u.ac.jp/pub/resv"
-OUT_DIR   = "public/htmls"
+# スクリプトの場所を基準にhtmlsディレクトリのパスを構築
+OUT_DIR   = os.path.join(os.path.dirname(os.path.abspath(__file__)), "htmls")
 
 def make_session():
     s = requests.Session()
@@ -34,7 +35,7 @@ def inline_resources(html: str, session: requests.Session) -> str:
             return ""  # 空に置き換えて続行
         return f"<style>\n{txt}\n</style>"
     html = re.sub(
-        r'<link[^>]+rel=["\']stylesheet["\'][^>]+href=["\']([^"\']+)["\']',
+        r'<link[^>]+rel=["\\]'stylesheet["\\]'[^>]+href=["\\]'([^"\\]+)["\\]',
         repl_css, html, flags=re.IGNORECASE)
 
     # JS
@@ -47,7 +48,7 @@ def inline_resources(html: str, session: requests.Session) -> str:
             return ""
         return f"<script>\n{txt}\n</script>"
     html = re.sub(
-        r'<script[^>]+src=["\']([^"\']+)["\'][^>]*></script>',
+        r'<script[^>]+src=["\\]'([^"\\]+)["\\]'[^>]*></script>',
         repl_js, html, flags=re.IGNORECASE)
 
     return html
@@ -58,7 +59,7 @@ def save_reservation_html(date_str: str):
     """
     y, m, d = date_str.split("-")
     os.makedirs(OUT_DIR, exist_ok=True)
-    out_path = f"{OUT_DIR}/{date_str}.html"
+    out_path = os.path.join(OUT_DIR, f"{date_str}.html")
 
     s = make_session()
     s.headers.update({"User-Agent":"Mozilla/5.0"})
@@ -76,25 +77,50 @@ def save_reservation_html(date_str: str):
     # 3) 日次ビュー取得
     url = f"{BASE}/rsvMain.php?t=0&y={y}&m={int(m)}&d={int(d)}"
     resp2 = s.get(url, timeout=10)
+    resp2.raise_for_status() # HTTPエラーがあれば例外を発生させる
     html = resp2.text.replace(
         "<head>",
-        '<head><base href="https://www.med.osaka-u.ac.jp/pub/resv/">'
+        '<head><base href="https://www.med.osaka-u.ac.jp/pub/resv/">' # Changed to use single quotes for the base href value
     )
     html = inline_resources(html, s)
     with open(out_path, "w", encoding="utf-8") as f:
         f.write(html)
     print("✅ 日次ビュー保存完了:", out_path)
 
+def cleanup_old_htmls():
+    """過去の日付のHTMLファイルを削除する"""
+    print("古いHTMLファイルをクリーンアップしています...")
+    today = datetime.today().date()
+
+    if not os.path.exists(OUT_DIR):
+        print(f"ディレクトリが見つかりません: {OUT_DIR}")
+        return
+
+    for filename in os.listdir(OUT_DIR):
+        if filename.endswith('.html'):
+            try:
+                file_date_str = filename.replace('.html', '')
+                file_date = datetime.strptime(file_date_str, '%Y-%m-%d').date()
+                if file_date < today:
+                    file_path = os.path.join(OUT_DIR, filename)
+                    os.remove(file_path)
+                    print(f"古いファイルを削除しました: {file_path}")
+            except ValueError:
+                print(f"日付形式でないためスキップ: {filename}")
+
 if __name__ == "__main__":
-    # ── 今日から30日分の日次ビューを取得 ──
+    # 1. 古いHTMLファイルを削除
+    cleanup_old_htmls()
+
+    # 2. 今日から30日分の日次ビューを取得
+    print("\n今日から30日分のHTMLを取得します...")
     today = datetime.today()
     for delta in range(0, 30):
         d = today + timedelta(days=delta)
         date_str = d.strftime("%Y-%m-%d")
-        save_reservation_html(date_str)
+        try:
+            save_reservation_html(date_str)
+        except Exception as e:
+            print(f"エラー: {date_str} の取得に失敗しました - {e}")
 
-    # （必要に応じて月間ビューも取得するなら追加で↓）
-    # for delta in range(0, 2):
-    #     # たとえば今月と来月の２ヶ月分
-    #     m = (today + timedelta(days=delta*30)).strftime("%Y-%m")
-    #     save_reservation_month_html(m)
+    print("\n処理が完了しました。")
