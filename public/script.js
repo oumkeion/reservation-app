@@ -69,11 +69,12 @@ document.addEventListener('DOMContentLoaded', function() {
   let selectedStart, selectedEnd;
   let dailyMemos = {};
   let currentEditingDate = null;
+  let calendar; // calendarインスタンスを保持する変数をここで宣言
 
   // カレンダー要素が存在する場合のみ初期化処理を実行
   if (calendarEl) {
     // --- FullCalendar 初期化 ---
-    const calendar = new FullCalendar.Calendar(calendarEl, {
+    calendar = new FullCalendar.Calendar(calendarEl, { // constを外して、上位スコープの変数に代入
       // 今日の曜日を左端に
       firstDay: today.getDay(),
 
@@ -422,29 +423,29 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // --- 予約ルール検証 ---
-  function validateReservation(eventData) {
-    const { type, title, start, now } = eventData;
+  function validateReservation(calendar, eventData) {
+    const { type, title, start, now, editor } = eventData; // editor を受け取る
 
     if (type === EVENT_TYPES.FIXED && !isAdminMode) {
       return "固定枠は管理者モードでのみ予約できます。";
     }
 
     if (type === EVENT_TYPES.CONFIRMED) {
-      console.log("Debugging calendar object:", calendar);
-      if (typeof calendar.getEvents !== 'function') {
-        console.error("Error: calendar.getEvents is not a function. Calendar object:", calendar);
-        return "カレンダーオブジェクトが正しく初期化されていません。";
+      if (!calendar || typeof calendar.getEvents !== 'function') {
+        console.error("Error: FullCalendar instance not available for validation.");
+        return "カレンダーの初期化が完了していません。しばらく待ってから再度お試しください。";
       }
       if ((start - now) / (1000 * 60 * 60 * 24) > 7) {
         return "確定枠は1週間先までしか予約できません。";
       }
-      const hasUnfinishedConfirmed = calendar.getEvents().some(e =>
+      // チェックロジックを「バンド名」から「記入者名」に変更し、どの予約が原因か特定する
+      const existingEvent = calendar.getEvents().find(e =>
         e.extendedProps.type === EVENT_TYPES.CONFIRMED &&
-        e.title === title &&
+        e.extendedProps.editor === editor &&
         new Date(e.end) > now
       );
-      if (hasUnfinishedConfirmed) {
-        return "すでに予約中の確定枠が終了していないため、新たな予約はできません。";
+      if (existingEvent) {
+        return `あなたはすでに確定枠の予約（バンド名: ${existingEvent.title}）を保持しているため、新たな予約はできません。\nその予約が終了してから再度お試しください。`;
       }
     }
 
@@ -497,7 +498,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   
     // 予約ルールの検証
-    const validationError = validateReservation({ type, title, start, now });
+    const validationError = validateReservation(calendar, { type, title, start, now, editor });
     if (validationError) {
       alert(validationError);
       return;
