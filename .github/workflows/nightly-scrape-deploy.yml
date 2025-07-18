@@ -67,8 +67,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
       - name: Deploy to Firebase Hosting
         run: |
-          /usr/local/bin/npx firebase-tools@latest deploy --only hosting --project oumkeion-reservation-app --ignore-scripts
+          firebase deploy --only hosting --project oumkeion-reservation-app --ignore-scripts
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }} # サービスアカウントキーを直接トークンとして渡す
