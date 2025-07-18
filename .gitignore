@@ -1,2 +1,9 @@
-# Firebase Service Account Key (should not be committed)
-oumkeion-reservation-app-firebase-adminsdk-fbsvc-0c9b0b4699.json
+
+# macOS system files
+.DS_Store
+
+# Firebase local files
+.firebase/
+
+# Public directory specific files
+public/.DS_Store
