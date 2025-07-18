@@ -232,7 +232,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const loadBtn = document.getElementById('loadResvBtn');
   const pad = n => String(n).padStart(2, '0');
   dateInput.min = `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`;
-  const future = new Date(today.getTime() + 1000*60*60*24*30);
+  const future = new Date(today.getTime() + 1000*60*60*24*60);
   dateInput.max = `${future.getFullYear()}-${pad(future.getMonth()+1)}-${pad(future.getDate())}`;
   dateInput.value = dateInput.min;
 
