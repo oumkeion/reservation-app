@@ -430,6 +430,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (type === EVENT_TYPES.CONFIRMED) {
+      console.log("Debugging calendar object:", calendar);
+      if (typeof calendar.getEvents !== 'function') {
+        console.error("Error: calendar.getEvents is not a function. Calendar object:", calendar);
+        return "カレンダーオブジェクトが正しく初期化されていません。";
+      }
       if ((start - now) / (1000 * 60 * 60 * 24) > 7) {
         return "確定枠は1週間先までしか予約できません。";
       }
