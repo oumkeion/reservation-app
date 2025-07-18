@@ -122,7 +122,7 @@ if __name__ == "__main__":
     # 2. 今日から30日分の日次ビューを取得
     print("\n今日から30日分のHTMLを取得します...")
     today = datetime.today()
-    for delta in range(0, 30):
+    for delta in range(0, 60): # 今日から60日分（約2ヶ月分）のHTMLを取得
         d = today + timedelta(days=delta)
         date_str = d.strftime("%Y-%m-%d")
         try:
