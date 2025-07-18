@@ -74,6 +74,11 @@ document.addEventListener('DOMContentLoaded', function() {
   // カレンダー要素が存在する場合のみ初期化処理を実行
   if (calendarEl) {
     // --- FullCalendar 初期化 ---
+    let calendar; // calendarインスタンスを保持する変数をここで宣言
+
+  // カレンダー要素が存在する場合のみ初期化処理を実行
+  if (calendarEl) {
+    // --- FullCalendar 初期化 ---
     calendar = new FullCalendar.Calendar(calendarEl, { // constを外して、上位スコープの変数に代入
       plugins: ['interaction', 'dayGrid', 'timeGrid', 'list'], // 必要なプラグインを明示的に指定
       // 今日の曜日を左端に
@@ -94,7 +99,7 @@ document.addEventListener('DOMContentLoaded', function() {
       aspectRatio:  1.2, // スマホ表示で縦長になりすぎないように調整
 
       // タッチ操作
-      selectable:           true,
+      selectable:           false, // 初期状態では選択不可とし、ログイン後に有効化する
       selectLongPressDelay: 300,
       longPressDelay:       300,
       editable:             false,
@@ -438,10 +443,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (type === EVENT_TYPES.CONFIRMED) {
-      if (!calendarInstance || typeof calendarInstance.getEvents !== 'function') {
-        console.error("Error: FullCalendar instance not available for validation.");
-        return "カレンダーの初期化が完了していません。しばらく待ってから再度お試しください。";
-      }
       if ((start - now) / (1000 * 60 * 60 * 24) > 7) {
         return "確定枠は1週間先までしか予約できません。";
       }
