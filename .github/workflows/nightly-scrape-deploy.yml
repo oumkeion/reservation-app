@@ -33,6 +33,15 @@ jobs:
           echo "=== public/scraper_requests.py ==="
           sed -n '1,40p' public/scraper_requests.py
 
+      - name: Echo debug info
+        run: |
+          echo "::group::PROJECT DEBUG"
+          echo "PROJECT from env : $PROJECT_ID"
+          echo ".firebaserc      :"; cat .firebaserc
+          echo "firebase.json    :"; cat firebase.json
+          echo "ServiceAccount   :" $(echo "$FIREBASE_SERVICE_ACCOUNT" | jq -r .project_id)
+          echo "::endgroup::"
+
       - name: Commit & Push HTMLs
         run: |
           git config user.name "github-actions[bot]"
@@ -54,5 +63,5 @@ jobs:
         with:
           repoToken: "${{ secrets.GITHUB_TOKEN }}"
           firebaseServiceAccount: "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}"
+          projectId: oumkeion-reservation-app   # ← ここを文字列で固定
           channelId: live
-          projectId: oumkeion-reservation-app
