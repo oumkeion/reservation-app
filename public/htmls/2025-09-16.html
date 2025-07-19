@@ -15677,30 +15677,30 @@ $(function(){
 </style>>
 	<script>
 		//カレンダー
-		var targetDate = new Date("2025-7-18 00:00:00");
+		var targetDate = new Date("2025-9-16 00:00:00");
 		var targetY  = 2025;
-		var targetM  = 7;
-		var targetD  = 18;
+		var targetM  = 9;
+		var targetD  = 16;
 		$(function(){
 			//前日
 			$("#chgDatePrev").click(function(){
 				$(':hidden[name="y"]').val('2025');
-				$(':hidden[name="m"]').val('07');
-				$(':hidden[name="d"]').val('17');
+				$(':hidden[name="m"]').val('09');
+				$(':hidden[name="d"]').val('15');
 				$('#chgParameterForm').submit();
 			});
 			//翌日
 			$("#chgDateNext").click(function(){
 				$(':hidden[name="y"]').val('2025');
-				$(':hidden[name="m"]').val('07');
-				$(':hidden[name="d"]').val('19');
+				$(':hidden[name="m"]').val('09');
+				$(':hidden[name="d"]').val('17');
 				$('#chgParameterForm').submit();
 			});
 			//今日
 			$("#chgDateToday").click(function(){
 				$(':hidden[name="y"]').val('2025');
 				$(':hidden[name="m"]').val('07');
-				$(':hidden[name="d"]').val('19');
+				$(':hidden[name="d"]').val('20');
 				$('#chgParameterForm').submit();
 			});
 		});
@@ -15924,8 +15924,8 @@ $(function(){
 
 <form method="get" id="chgParameterForm" action="./rsvMain.php">
 <input type="hidden" name="y" id="y" value="2025">
-<input type="hidden" name="m" id="m" value="7">
-<input type="hidden" name="d" id="d" value="18">
+<input type="hidden" name="m" id="m" value="9">
+<input type="hidden" name="d" id="d" value="16">
 <div class="resvNaviArea"><div class="resvNavi">
 	<div>
 		<select name="t" id="t" class="resvNaviTypeSelect">
@@ -15935,7 +15935,7 @@ $(function(){
 		</select>
 	</div>
 	<div><input type="button" id="chgDatePrev" class="resvNaviMoveBtn" value="＜"></div>
-	<div><input type="text" class="resvNaviDate datepicker" value="2025年07月18日(金)" readonly></div>
+	<div><input type="text" class="resvNaviDate datepicker" value="2025年09月16日(火)" readonly></div>
 	<div><input type="button" id="chgDateNext" class="resvNaviMoveBtn" value="＞"></div>
 	<div><input type="button" id="chgDateToday" class="resvNaviTodayBtn" value="今日"></div>
 </div></div>
@@ -15945,12 +15945,12 @@ $(function(){
 
 
 <div class="resvTTWrapper">
-<div class="scBoxMasc"><p>過去日付の予約はできません。今日以降の日付を指定してください。</p></div>	<div class="resvTTBoxEquipL">
-		<div class="resvEquipBoxCaption"></div><div class="resvEquipBox resvEquipBoxBG1"><a href="./rsvMainMonth.php?t=0&e=1&y=2025&m=7&d=18">1階 A講堂</a></div><div class="resvEquipBox resvEquipBoxBG2"><a href="./rsvMainMonth.php?t=0&e=2&y=2025&m=7&d=18">1階 セミナー室</a></div><div class="resvEquipBox resvEquipBoxBG1"><a href="./rsvMainMonth.php?t=0&e=3&y=2025&m=7&d=18">1階 第1講義室</a></div><div class="resvEquipBox resvEquipBoxBG2"><a href="./rsvMainMonth.php?t=0&e=4&y=2025&m=7&d=18">2階 B講堂</a></div><div class="resvEquipBox resvEquipBoxBG1"><a href="./rsvMainMonth.php?t=0&e=5&y=2025&m=7&d=18">2階 C講堂</a></div><div class="resvEquipBox resvEquipBoxBG2"><a href="./rsvMainMonth.php?t=0&e=6&y=2025&m=7&d=18">2階 第2講義室</a></div><div class="resvEquipBox resvEquipBoxBG1"><a href="./rsvMainMonth.php?t=0&e=7&y=2025&m=7&d=18">2階 A視聴覚室</a></div><div class="resvEquipBox resvEquipBoxBG2"><a href="./rsvMainMonth.php?t=0&e=8&y=2025&m=7&d=18">2階 B視聴覚室</a></div><div class="resvEquipBox resvEquipBoxBG1"><a href="./rsvMainMonth.php?t=0&e=9&y=2025&m=7&d=18">3階 D講堂</a></div><div class="resvEquipBox resvEquipBoxBG2"><a href="./rsvMainMonth.php?t=0&e=10&y=2025&m=7&d=18">3階 E講堂</a></div><div class="resvEquipBoxCaption"></div>
+	<div class="resvTTBoxEquipL">
+		<div class="resvEquipBoxCaption"></div><div class="resvEquipBox resvEquipBoxBG1"><a href="./rsvMainMonth.php?t=0&e=1&y=2025&m=9&d=16">1階 A講堂</a></div><div class="resvEquipBox resvEquipBoxBG2"><a href="./rsvMainMonth.php?t=0&e=2&y=2025&m=9&d=16">1階 セミナー室</a></div><div class="resvEquipBox resvEquipBoxBG1"><a href="./rsvMainMonth.php?t=0&e=3&y=2025&m=9&d=16">1階 第1講義室</a></div><div class="resvEquipBox resvEquipBoxBG2"><a href="./rsvMainMonth.php?t=0&e=4&y=2025&m=9&d=16">2階 B講堂</a></div><div class="resvEquipBox resvEquipBoxBG1"><a href="./rsvMainMonth.php?t=0&e=5&y=2025&m=9&d=16">2階 C講堂</a></div><div class="resvEquipBox resvEquipBoxBG2"><a href="./rsvMainMonth.php?t=0&e=6&y=2025&m=9&d=16">2階 第2講義室</a></div><div class="resvEquipBox resvEquipBoxBG1"><a href="./rsvMainMonth.php?t=0&e=7&y=2025&m=9&d=16">2階 A視聴覚室</a></div><div class="resvEquipBox resvEquipBoxBG2"><a href="./rsvMainMonth.php?t=0&e=8&y=2025&m=9&d=16">2階 B視聴覚室</a></div><div class="resvEquipBox resvEquipBoxBG1"><a href="./rsvMainMonth.php?t=0&e=9&y=2025&m=9&d=16">3階 D講堂</a></div><div class="resvEquipBox resvEquipBoxBG2"><a href="./rsvMainMonth.php?t=0&e=10&y=2025&m=9&d=16">3階 E講堂</a></div><div class="resvEquipBoxCaption"></div>
 	</div>
 	<div class="resvTTBoxEquipR">
 		<div class="resvTimeBoxCaption"><p>07:00</p><p>08:00</p><p>09:00</p><p>10:00</p><p>11:00</p><p>12:00</p><p>13:00</p><p>14:00</p><p>15:00</p><p>16:00</p><p>17:00</p><p>18:00</p><p>19:00</p><p>20:00</p><p>21:00</p></div>
-		<div class="scBoxWrap"><div class="scBox" dana-id="1" dana-unit="10"><div class="scScheduleBox sc" id="118672" style="left:81px;width:198px;"><p>&nbsp;</p></div><div class="scScheduleBox sc" id="118673" style="left:351px;width:81px;"><p>&nbsp;</p></div></div></div><div class="scBoxWrap"><div class="scBox" dana-id="2" dana-unit="10"></div></div><div class="scBoxWrap"><div class="scBox" dana-id="3" dana-unit="10"></div></div><div class="scBoxWrap"><div class="scBox" dana-id="4" dana-unit="10"><div class="scScheduleBox sc" id="122701" style="left:0px;width:81px;"><p>&nbsp;</p></div><div class="scScheduleBox sc" id="123915" style="left:81px;width:351px;"><p>&nbsp;</p></div><div class="scScheduleBox sc" id="124118" style="left:432px;width:108px;"><p>&nbsp;</p></div><div class="scScheduleBox sc" id="124110" style="left:540px;width:54px;"><p>&nbsp;</p></div></div></div><div class="scBoxWrap"><div class="scBox" dana-id="5" dana-unit="10"><div class="scScheduleBox sc" id="118999" style="left:81px;width:378px;"><p>&nbsp;</p></div><div class="scScheduleBox sc" id="119000" style="left:468px;width:81px;"><p>&nbsp;</p></div></div></div><div class="scBoxWrap"><div class="scBox" dana-id="6" dana-unit="10"><div class="scScheduleBox sc" id="124765" style="left:81px;width:432px;"><p>&nbsp;</p></div></div></div><div class="scBoxWrap"><div class="scBox" dana-id="7" dana-unit="10"></div></div><div class="scBoxWrap"><div class="scBox" dana-id="8" dana-unit="10"></div></div><div class="scBoxWrap"><div class="scBox" dana-id="9" dana-unit="10"><div class="scScheduleBox sc" id="119292" style="left:81px;width:198px;"><p>&nbsp;</p></div><div class="scScheduleBox sc" id="119293" style="left:333px;width:180px;"><p>&nbsp;</p></div><div class="scScheduleBox sc" id="124436" style="left:540px;width:261px;background-color:#3333ff;"><p>&nbsp;</p></div></div></div><div class="scBoxWrap"><div class="scBox" dana-id="10" dana-unit="10"><div class="scScheduleBox sc" id="119516" style="left:270px;width:162px;"><p>&nbsp;</p></div><div class="scScheduleBox sc" id="119517" style="left:432px;width:108px;"><p>&nbsp;</p></div><div class="scScheduleBox sc" id="124437" style="left:540px;width:261px;background-color:#3333ff;"><p>&nbsp;</p></div></div></div>		<div class="resvTimeBoxCaption"><p>07:00</p><p>08:00</p><p>09:00</p><p>10:00</p><p>11:00</p><p>12:00</p><p>13:00</p><p>14:00</p><p>15:00</p><p>16:00</p><p>17:00</p><p>18:00</p><p>19:00</p><p>20:00</p><p>21:00</p></div>
+		<div class="scBoxWrap"><div class="scBox" dana-id="1" dana-unit="10"><div class="scScheduleBox sc" id="122308" style="left:0px;width:81px;"><p>&nbsp;</p></div><div class="scScheduleBox sc" id="124732" style="left:486px;width:162px;"><p>&nbsp;</p></div></div></div><div class="scBoxWrap"><div class="scBox" dana-id="2" dana-unit="10"></div></div><div class="scBoxWrap"><div class="scBox" dana-id="3" dana-unit="10"></div></div><div class="scBoxWrap"><div class="scBox" dana-id="4" dana-unit="10"><div class="scScheduleBox sc" id="122456" style="left:486px;width:324px;"><p>&nbsp;</p></div></div></div><div class="scBoxWrap"><div class="scBox" dana-id="5" dana-unit="10"><div class="scScheduleBox sc" id="119052" style="left:81px;width:171px;"><p>&nbsp;</p></div><div class="scScheduleBox sc" id="119053" style="left:306px;width:153px;"><p>&nbsp;</p></div><div class="scScheduleBox sc" id="119054" style="left:468px;width:81px;"><p>&nbsp;</p></div><div class="scScheduleBox sc" id="125506" style="left:567px;width:189px;"><p>&nbsp;</p></div></div></div><div class="scBoxWrap"><div class="scBox" dana-id="6" dana-unit="10"><div class="scScheduleBox sc" id="123171" style="left:540px;width:135px;"><p>&nbsp;</p></div></div></div><div class="scBoxWrap"><div class="scBox" dana-id="7" dana-unit="10"></div></div><div class="scBoxWrap"><div class="scBox" dana-id="8" dana-unit="10"></div></div><div class="scBoxWrap"><div class="scBox" dana-id="9" dana-unit="10"><div class="scScheduleBox sc" id="122590" style="left:513px;width:162px;"><p>&nbsp;</p></div></div></div><div class="scBoxWrap"><div class="scBox" dana-id="10" dana-unit="10"><div class="scScheduleBox sc" id="119547" style="left:99px;width:414px;"><p>&nbsp;</p></div></div></div>		<div class="resvTimeBoxCaption"><p>07:00</p><p>08:00</p><p>09:00</p><p>10:00</p><p>11:00</p><p>12:00</p><p>13:00</p><p>14:00</p><p>15:00</p><p>16:00</p><p>17:00</p><p>18:00</p><p>19:00</p><p>20:00</p><p>21:00</p></div>
 	</div>
 </div><!--/resvTTWrapper -->
 
