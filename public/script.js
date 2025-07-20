@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // 1) 今日の日付を先に定義
   const today = new Date();
   const calendarEl = document.getElementById('calendar');
-  let calendar; // calendarインスタンスを保持する変数をここで宣言
+  let fullCalendarInstance; // 衝突を避けるため、より具体的な変数名に変更
 
   // 時刻フォーマットヘルパー
   function formatTime(date) {
@@ -74,8 +74,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // カレンダー要素が存在する場合のみ初期化処理を実行
   if (calendarEl) {
     // --- FullCalendar 初期化 ---
-    calendar = new FullCalendar.Calendar(calendarEl, {
-      plugins: ['interaction', 'dayGrid', 'timeGrid', 'list'], // 必要なプラグインを明示的に指定
+    calendar = new FullCalendar.Calendar(calendarEl, { // constを外して、上位スコープの変数に代入
       // 今日の曜日を左端に
       firstDay: today.getDay(),
 
@@ -94,7 +93,7 @@ document.addEventListener('DOMContentLoaded', function() {
       aspectRatio:  1.2, // スマホ表示で縦長になりすぎないように調整
 
       // タッチ操作
-      selectable:           true,
+      selectable:           false, // 初期状態では選択不可とし、ログイン後に有効化する
       selectLongPressDelay: 300,
       longPressDelay:       300,
       editable:             false,
@@ -203,22 +202,22 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
 
-    calendar.render();
+    fullCalendarInstance.render();
 
     // --- Firestoreからイベントをリアルタイムで読み込み ---
     db.collection('events').onSnapshot(snapshot => {
       snapshot.docChanges().forEach(change => {
         const eventData = { id: change.doc.id, ...change.doc.data() };
-        const existingEvent = calendar.getEventById(change.doc.id);
+        const existingEvent = fullCalendarInstance.getEventById(change.doc.id);
 
         if (change.type === 'added') {
           if (!existingEvent) {
-            calendar.addEvent(eventData);
+            fullCalendarInstance.addEvent(eventData);
           }
         }
         if (change.type === 'modified') {
           if (existingEvent) existingEvent.remove();
-          calendar.addEvent(eventData);
+          fullCalendarInstance.addEvent(eventData);
         }
         if (change.type === 'removed') {
           if (existingEvent) existingEvent.remove();
@@ -352,6 +351,12 @@ document.addEventListener('DOMContentLoaded', function() {
     isAdminMode = isAuthorizedAdmin;
     document.body.classList.toggle('admin-mode', isAdminMode);
     toggleAdminModeBtn.textContent = isAdminMode ? "ログアウト" : "管理者ログイン";
+
+    // ログイン状態に応じてカレンダーの選択可否を動的に変更
+    if (fullCalendarInstance) {
+      // ログインしているユーザーのみ、カレンダーの日時選択を可能にする
+      fullCalendarInstance.setOption('selectable', !!user);
+    }
     updateFixedOptionVisibility();
 
     // もしGoogleアカウントでログインはしているが、許可リストにないユーザーだった場合
@@ -416,7 +421,7 @@ document.addEventListener('DOMContentLoaded', function() {
       extendedProps: {
         type: EVENT_TYPES.NO_SOUND,
         comment: "",
-        editor: editor
+        editor: editorName
       }
     };
     addEventToStorageAndCalendar(newEvent);
@@ -424,7 +429,7 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // --- 予約ルール検証 ---
-  function validateReservation(calendar, eventData) {
+  function validateReservation(calendarInstance, eventData) {
     const { type, title, start, now, editor } = eventData; // editor を受け取る
 
     if (type === EVENT_TYPES.FIXED && !isAdminMode) {
@@ -432,7 +437,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (type === EVENT_TYPES.CONFIRMED) {
-      if (!calendar || typeof calendar.getEvents !== 'function') {
+      if (!calendarInstance || typeof calendarInstance.getEvents !== 'function') {
         console.error("Error: FullCalendar instance not available for validation.");
         return "カレンダーの初期化が完了していません。しばらく待ってから再度お試しください。";
       }
@@ -440,7 +445,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return "確定枠は1週間先までしか予約できません。";
       }
       // チェックロジックを「バンド名」から「記入者名」に変更し、どの予約が原因か特定する
-      const existingEvent = calendar.getEvents().find(e =>
+      const existingEvent = calendarInstance.getEvents().find(e =>
         e.extendedProps.type === EVENT_TYPES.CONFIRMED &&
         e.extendedProps.editor === editor &&
         new Date(e.end) > now
@@ -499,7 +504,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   
     // 予約ルールの検証
-    const validationError = validateReservation(calendar, { type, title, start, now, editor });
+    const validationError = validateReservation(fullCalendarInstance, { type, title, start, now, editor });
     if (validationError) {
       alert(validationError);
       return;
