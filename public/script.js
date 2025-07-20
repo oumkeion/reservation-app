@@ -74,13 +74,8 @@ document.addEventListener('DOMContentLoaded', function() {
   // カレンダー要素が存在する場合のみ初期化処理を実行
   if (calendarEl) {
     // --- FullCalendar 初期化 ---
-    calendar = new FullCalendar.Calendar(calendarEl, {
-      plugins: [
-        FullCalendarInteraction,
-        FullCalendarTimeGrid,
-        FullCalendarDayGrid,
-        FullCalendarList
-      ],
+    fullCalendarInstance = new FullCalendar.Calendar(calendarEl, {
+      // index.global.min.js は全ての標準プラグインを含むため、`plugins`オプションは不要です。
       // 今日の曜日を左端に
       firstDay: today.getDay(),
 
@@ -99,7 +94,7 @@ document.addEventListener('DOMContentLoaded', function() {
       aspectRatio:  1.2, // スマホ表示で縦長になりすぎないように調整
 
       // タッチ操作
-      selectable:           false, // 初期状態では選択不可とし、ログイン後に有効化する
+      selectable:           true, // 常に選択可能にする
       selectLongPressDelay: 300,
       longPressDelay:       300,
       editable:             false,
@@ -358,18 +353,8 @@ document.addEventListener('DOMContentLoaded', function() {
     document.body.classList.toggle('admin-mode', isAdminMode);
     toggleAdminModeBtn.textContent = isAdminMode ? "ログアウト" : "管理者ログイン";
 
-    // ログイン状態に応じてカレンダーの選択可否を動的に変更
-    if (fullCalendarInstance) {
-      // ログインしているユーザーのみ、カレンダーの日時選択を可能にする
-      fullCalendarInstance.setOption('selectable', !!user);
-    }
     updateFixedOptionVisibility();
 
-    // もしGoogleアカウントでログインはしているが、許可リストにないユーザーだった場合
-    if (user && !isAuthorizedAdmin) {
-      alert(`「${user.email}」は管理者として登録されていません。自動的にログアウトします。`);
-      firebase.auth().signOut(); // 強制的にログアウト
-    }
   });
 
   // 管理者モード切替ボタンの処理をFirebase Googleログイン用に変更
