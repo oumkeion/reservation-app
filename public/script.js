@@ -104,12 +104,15 @@ document.addEventListener('DOMContentLoaded', function() {
         selectedStart = info.startStr;
         selectedEnd   = info.endStr;
         modal.style.display = 'block';
-        // モーダルが開いたときにフォームの状態をリセットし、
-        // バリデーションを初期実行してボタンを無効化する
+        // モーダルが開いたときにフォームの状態をリセット
         bandNameInput.value = '';
         commentInput.value = '';
-        editorNameInput.value = '';
         eventTypeInput.selectedIndex = 0;
+
+        // 記入者名フィールドをリセットし、常に手動で入力できるようにする
+        editorNameInput.value = '';
+        editorNameInput.readOnly = false;
+        // バリデーションを初期実行してボタンを無効化する
         validateModalInputs();
       },
 
@@ -117,34 +120,42 @@ document.addEventListener('DOMContentLoaded', function() {
       eventClick: info => {
         const ev       = info.event;
         const type     = ev.extendedProps.type;
-        const isProt   = (type === EVENT_TYPES.NO_SOUND || type === EVENT_TYPES.FIXED);
-        const canDel   = isAdminMode || !isProt;
+        const editor   = ev.extendedProps.editor;
+        const isProtected = (type === EVENT_TYPES.NO_SOUND || type === EVENT_TYPES.FIXED);
 
         detailTitle.textContent   = `バンド名：${ev.title}`;
         detailTime.textContent    = `時間：${formatTime(ev.start)} ～ ${formatTime(ev.end)}`;
         detailComment.textContent = `コメント：${ev.extendedProps.comment || '（なし）'}`;
         detailEditor.textContent  = `記入者：${ev.extendedProps.editor || '（不明）'}`;
 
-        // 削除ボタンの制御
-        if (canDel) {
-          deleteEventBtn.style.display = 'inline-block';
-          deleteEventBtn.onclick = () => {
-            const deleterName = prompt('削除を実行するあなたの名前を入力してください:');
-            if (!deleterName || deleterName.trim() === '') {
-              return alert('削除者名の入力は必須です。');
-            }
-            if (!confirm(`「${ev.title}」の予約を本当に削除しますか？`)) return;
-
-            // Firestoreからイベントを削除（onSnapshotがカレンダーからの削除をハンドル）
-            db.collection('events').doc(ev.id).delete().then(() => {
-              addLogEntry("削除", ev, deleterName.trim()); // 削除成功後にログを記録
-              alert("予約を削除しました。");
-            }).catch(error => alert("削除に失敗しました: " + error));
-            eventDetailModal.style.display = 'none';
-          };
-        } else {
+        // 削除ボタンの制御：保護されたイベントは管理者以外は常に削除不可
+        if (isProtected && !isAdminMode) {
           deleteEventBtn.style.display = 'none';
+        } else {
+          deleteEventBtn.style.display = 'inline-block';
         }
+
+        deleteEventBtn.onclick = () => {
+          if (!confirm(`「${ev.title}」の予約を本当に削除しますか？`)) return;
+
+          // 管理者モードなら、本人確認なしで削除
+          if (isAdminMode) {
+            const adminName = currentUser ? (currentUser.displayName || currentUser.email) : "管理者";
+            deleteEventFromDb(ev, adminName);
+            return;
+          }
+
+          // 通常ユーザーの場合、本人確認を行う
+          const inputName = prompt(`本人確認のため、この予約の「記入者名」(${editor || '不明'})を入力してください:`);
+          if (inputName === null) return; // キャンセルされた場合
+          if (!editor || inputName.trim() !== editor) {
+            return alert("入力された名前が一致しません。削除できませんでした。");
+          }
+          
+          // 名前が一致した場合のみ削除
+          deleteEventFromDb(ev, inputName.trim());
+        };
+
         eventDetailModal.style.display = 'block';
       },
       
@@ -275,6 +286,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const fixedEndDateInput = document.getElementById('fixedEndDate');
 
   const openFixedSlotModalBtn = document.createElement("button");
+  openFixedSlotModalBtn.id = "openFixedSlotModalBtn"; // CSSで制御するためにIDを追加
   openFixedSlotModalBtn.textContent = "固定枠設定";
   openFixedSlotModalBtn.onclick = () => {
     if (!isAdminMode) {
@@ -340,13 +352,19 @@ document.addEventListener('DOMContentLoaded', function() {
   firebase.auth().onAuthStateChanged(async (user) => { // asyncを追加してawaitを使えるようにする
     currentUser = user; // ログイン状態をグローバル変数に保持
     let isAuthorizedAdmin = false; // デフォルトは非管理者
-
-    if (user) {
-      // Firestoreの'admins'コレクションにユーザーのメールアドレスのドキュメントが存在するか確認
-      const adminDoc = await db.collection('admins').doc(user.email).get();
-      if (adminDoc.exists) {
-        isAuthorizedAdmin = true;
+    
+    try {
+      if (user) {
+        // Firestoreの'admins'コレクションにユーザーのメールアドレスのドキュメントが存在するか確認
+        const adminDoc = await db.collection('admins').doc(user.email).get();
+        if (adminDoc.exists) {
+          isAuthorizedAdmin = true;
+        }
       }
+    } catch (error) {
+      console.error("管理者情報の確認中にエラーが発生しました:", error);
+      alert("管理者情報の確認に失敗しました。権限設定を確認してください。");
+      isAuthorizedAdmin = false; // エラー時は安全に非管理者として扱う
     }
     
     isAdminMode = isAuthorizedAdmin;
@@ -354,7 +372,6 @@ document.addEventListener('DOMContentLoaded', function() {
     toggleAdminModeBtn.textContent = isAdminMode ? "ログアウト" : "管理者ログイン";
 
     updateFixedOptionVisibility();
-
   });
 
   // 管理者モード切替ボタンの処理をFirebase Googleログイン用に変更
@@ -420,7 +437,7 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // --- 予約ルール検証 ---
-  function validateReservation(calendarInstance, eventData) {
+  function validateReservation(eventData) { // 引数から不要な calendarInstance を削除
     const { type, title, start, now, editor } = eventData; // editor を受け取る
 
     if (type === EVENT_TYPES.FIXED && !isAdminMode) {
@@ -428,15 +445,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (type === EVENT_TYPES.CONFIRMED) {
-      if (!calendarInstance || typeof calendarInstance.getEvents !== 'function') {
-        console.error("Error: FullCalendar instance not available for validation.");
-        return "カレンダーの初期化が完了していません。しばらく待ってから再度お試しください。";
-      }
       if ((start - now) / (1000 * 60 * 60 * 24) > 7) {
         return "確定枠は1週間先までしか予約できません。";
       }
       // チェックロジックを「バンド名」から「記入者名」に変更し、どの予約が原因か特定する
-      const existingEvent = calendarInstance.getEvents().find(e =>
+      const existingEvent = fullCalendarInstance.getEvents().find(e =>
         e.extendedProps.type === EVENT_TYPES.CONFIRMED &&
         e.extendedProps.editor === editor &&
         new Date(e.end) > now
@@ -495,7 +508,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   
     // 予約ルールの検証
-    const validationError = validateReservation(fullCalendarInstance, { type, title, start, now, editor });
+    const validationError = validateReservation({ type, title, start, now, editor });
     if (validationError) {
       alert(validationError);
       return;
@@ -519,6 +532,19 @@ document.addEventListener('DOMContentLoaded', function() {
   });
   
   // --- ヘルパー関数 ---
+
+  // イベントをFirestoreから削除する共通関数
+  function deleteEventFromDb(event, deleterName) {
+    db.collection('events').doc(event.id).delete()
+      .then(() => {
+        addLogEntry("削除", event, deleterName);
+        alert("予約を削除しました。");
+      })
+      .catch(error => alert("削除に失敗しました: " + error))
+      .finally(() => {
+        eventDetailModal.style.display = 'none';
+      });
+  }
 
   // イベントをストレージとカレンダーに追加する共通関数
   function addEventToStorageAndCalendar(event, action = "予約追加") {

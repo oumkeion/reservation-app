@@ -34,6 +34,11 @@ button:disabled {
   color: #666666;
   cursor: not-allowed;
 }
+/* 読み取り専用の入力フィールド */
+input[readonly] {
+  background-color: #eee;
+  cursor: not-allowed;
+}
 /* 列ヘッダー（日付ラベル）のみを着色 */
 .fc-col-header-cell.fc-day-today {
   background-color: #F0566E !important;  /* 好みで色調整OK */
@@ -216,4 +221,18 @@ body.admin-mode .daily-memo-edit-icon {
 .fc-event-title,
 .fc-event-time {
   color: black !important;
+}
+
+/* --- 管理者モード用スタイル --- */
+
+/* 初期状態では管理者用ボタンを非表示にする */
+#adminBtn, #openFixedSlotModalBtn, #deleteAllLogsBtn {
+  display: none;
+}
+
+/* 管理者モードの時だけ、管理者用ボタンを表示する */
+body.admin-mode #adminBtn,
+body.admin-mode #openFixedSlotModalBtn,
+body.admin-mode #deleteAllLogsBtn {
+  display: inline-block;
 }
