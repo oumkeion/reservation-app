@@ -74,8 +74,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // カレンダー要素が存在する場合のみ初期化処理を実行
   if (calendarEl) {
     // --- FullCalendar 初期化 ---
-    fullCalendarInstance = new FullCalendar.Calendar(calendarEl, {
-      // index.global.min.js は全ての標準プラグインを含むため、`plugins`オプションは不要です。
+    calendar = new FullCalendar.Calendar(calendarEl, { // constを外して、上位スコープの変数に代入
       // 今日の曜日を左端に
       firstDay: today.getDay(),
 
