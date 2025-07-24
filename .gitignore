@@ -7,3 +7,4 @@
 
 # Public directory specific files
 public/.DS_Store
+*.json
