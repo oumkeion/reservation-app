@@ -275,14 +275,108 @@ button:disabled {
   margin: 0 0 8px;
 }
 
-/* 講義棟予約カレンダー埋め込み */
-.lecture-hall-embed {
+/* 講義棟 空き状況セクション */
+.lecture-hall-section {
   margin-top: 24px;
 }
 
-.lecture-hall-embed h2 {
+.lecture-hall-section h2 {
   font-size: 1.05rem;
   margin: 0 0 8px;
+}
+
+.lh-updated {
+  font-size: 0.78rem;
+  color: #999;
+}
+
+.lh-table {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.lh-row {
+  display: flex;
+  align-items: stretch;
+  border-top: 1px solid #eee;
+}
+
+.lh-row-header {
+  border-top: none;
+  height: 22px;
+  background: #fafafa;
+}
+
+.lh-room-name {
+  flex: 0 0 110px;
+  font-size: 0.78rem;
+  padding: 6px 8px;
+  border-right: 1px solid #eee;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lh-lane {
+  flex: 1;
+  position: relative;
+  min-height: 28px;
+}
+
+.lh-hour-label {
+  position: absolute;
+  top: 2px;
+  transform: translateX(-50%);
+  font-size: 0.7rem;
+  color: #999;
+}
+
+.lh-hour-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: #f0f0f0;
+}
+
+.lh-busy {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  background: #e57373;
+  border-radius: 3px;
+  opacity: 0.85;
+}
+
+.lh-legend {
+  font-size: 0.78rem;
+  color: #777;
+  margin: 6px 0 0;
+}
+
+.lh-legend-chip {
+  position: static;
+  display: inline-block;
+  width: 24px;
+  height: 10px;
+  vertical-align: middle;
+}
+
+.lh-fallback {
+  margin-top: 12px;
+}
+
+.lh-fallback summary {
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: #1976d2;
+}
+
+/* 講義棟予約カレンダー埋め込み（iframeフォールバック） */
+.lecture-hall-embed {
+  margin-top: 8px;
 }
 
 .lecture-hall-controls {

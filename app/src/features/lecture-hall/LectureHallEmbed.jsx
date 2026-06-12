@@ -45,7 +45,6 @@ export function LectureHallEmbed() {
 
   return (
     <section className="lecture-hall-embed">
-      <h2>講義棟予約カレンダー</h2>
       <div className="lecture-hall-controls">
         <label htmlFor="resvDate">日付選択:</label>
         <input

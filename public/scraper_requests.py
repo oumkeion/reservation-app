@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-import os, re, requests
+import json
+import os, re, sys, requests
 from datetime import datetime, timedelta
+from typing import Dict, List, Optional, Tuple
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
@@ -94,6 +96,90 @@ def save_reservation_html(date_str: str):
         f.write(html)
     print("✅ 日次ビュー保存完了:", out_path)
 
+# --- 構造化抽出（lecture-hall.json 生成） ---
+# 日次ビューのHTMLでは、予約は left/width のピクセル値で表現されている:
+#   時間軸 07:00〜22:00、54px = 1時間（dana-unit=10分 → 9px = 10分）
+GRID_START_HOUR = 7
+PX_PER_10MIN = 9
+
+ROOM_RE = re.compile(
+    r'<a href="\./rsvMainMonth\.php\?t=0&e=(\d+)[^"]*">([^<]+)</a>'
+)
+SCBOX_RE = re.compile(r'<div class="scBox" dana-id="(\d+)"[^>]*>(.*?)</div></div>', re.S)
+SCHEDULE_RE = re.compile(
+    r'<div class="scScheduleBox[^"]*"[^>]*style="left:(\d+)px;width:(\d+)px;"'
+)
+
+
+def _px_to_time(px: int) -> str:
+    """left/width のピクセル値を 07:00 起点の HH:MM に変換する。"""
+    minutes = round(px / PX_PER_10MIN) * 10
+    total = GRID_START_HOUR * 60 + minutes
+    return f"{total // 60:02d}:{total % 60:02d}"
+
+
+def parse_day_html(html: str) -> Tuple[List[Dict], Dict[str, List[Dict]]]:
+    """日次ビューHTMLから部屋一覧と予約時間帯を抽出する。
+
+    Returns:
+        (rooms, schedules):
+            rooms: [{"id": 1, "name": "1階 A講堂"}, ...]
+            schedules: {"1": [{"start": "16:00", "end": "20:00"}, ...], ...}
+    """
+    rooms = [{"id": int(rid), "name": name} for rid, name in ROOM_RE.findall(html)]
+    schedules: Dict[str, List[Dict]] = {str(r["id"]): [] for r in rooms}
+    for dana_id, inner in SCBOX_RE.findall(html):
+        slots = [
+            {
+                "start": _px_to_time(int(left)),
+                "end": _px_to_time(int(left) + int(width)),
+            }
+            for left, width in SCHEDULE_RE.findall(inner)
+        ]
+        slots.sort(key=lambda s: s["start"])
+        schedules[dana_id] = slots
+    return rooms, schedules
+
+
+def build_lecture_hall_json() -> None:
+    """OUT_DIR 内の全日次HTMLをパースして lecture-hall.json を出力する。"""
+    days: Dict[str, Dict[str, List[Dict]]] = {}
+    rooms: List[Dict] = []
+    if not os.path.exists(OUT_DIR):
+        print(f"ディレクトリが見つかりません: {OUT_DIR}")
+        return
+    for filename in sorted(os.listdir(OUT_DIR)):
+        if not filename.endswith(".html"):
+            continue
+        date_str = filename[:-5]
+        try:
+            datetime.strptime(date_str, "%Y-%m-%d")
+        except ValueError:
+            continue
+        path = os.path.join(OUT_DIR, filename)
+        try:
+            with open(path, encoding="utf-8") as f:
+                html = f.read()
+            day_rooms, schedules = parse_day_html(html)
+        except OSError as e:
+            print(f"⚠️ パース失敗 {filename}: {e}")
+            continue
+        if day_rooms:
+            rooms = day_rooms
+        days[date_str] = schedules
+    out_path = os.path.join(OUT_DIR, "lecture-hall.json")
+    data = {
+        "updatedAt": datetime.now().isoformat(timespec="seconds"),
+        "gridStart": "07:00",
+        "gridEnd": "22:00",
+        "rooms": rooms,
+        "days": days,
+    }
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
+    print(f"✅ 構造化データ保存完了: {out_path} ({len(days)}日分, {len(rooms)}部屋)")
+
+
 def cleanup_old_htmls():
     """過去の日付のHTMLファイルを削除する"""
     print("古いHTMLファイルをクリーンアップしています...")
@@ -116,11 +202,16 @@ def cleanup_old_htmls():
                 print(f"日付形式でないためスキップ: {filename}")
 
 if __name__ == "__main__":
+    # --rebuild-json: スクレイピングせず、既存HTMLから lecture-hall.json を再生成するだけ
+    if "--rebuild-json" in sys.argv:
+        build_lecture_hall_json()
+        sys.exit(0)
+
     # 1. 古いHTMLファイルを削除
     cleanup_old_htmls()
 
-    # 2. 今日から30日分の日次ビューを取得
-    print("\n今日から30日分のHTMLを取得します...")
+    # 2. 今日から60日分の日次ビューを取得
+    print("\n今日から60日分のHTMLを取得します...")
     today = datetime.today()
     for delta in range(0, 60): # 今日から60日分（約2ヶ月分）のHTMLを取得
         d = today + timedelta(days=delta)
@@ -129,5 +220,8 @@ if __name__ == "__main__":
             save_reservation_html(date_str)
         except Exception as e:
             print(f"エラー: {date_str} の取得に失敗しました - {e}")
+
+    # 3. 取得したHTMLから構造化データ(lecture-hall.json)を生成
+    build_lecture_hall_json()
 
     print("\n処理が完了しました.")
