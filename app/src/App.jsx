@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useAuth } from './features/auth/useAuth'
 import { AuthBar } from './features/auth/AuthBar'
 import { CalendarView } from './features/calendar/CalendarView'
-import { LectureHallGrid } from './features/lecture-hall/LectureHallGrid'
+import { LECTURE_HALL_COLOR } from './features/lecture-hall/useLectureHall'
 import { BandBoard } from './features/bands/BandBoard'
 import { IntentBoard } from './features/intents/IntentBoard'
 import { TYPE_LABELS, TYPE_COLORS, EVENT_TYPES } from './lib/eventTypes'
@@ -24,6 +24,10 @@ function Legend() {
           {TYPE_LABELS[t]}
         </span>
       ))}
+      <span className="legend-item">
+        <span className="legend-color" style={{ background: LECTURE_HALL_COLOR }} />
+        講義棟の予約
+      </span>
     </div>
   )
 }
@@ -62,10 +66,6 @@ export default function App() {
           <>
             <Legend />
             <CalendarView profile={profile} isAdmin={isAdmin} />
-            <section className="lecture-hall-section">
-              <h2>講義棟 空き状況</h2>
-              <LectureHallGrid />
-            </section>
           </>
         )}
         {tab === 'bands' && (
