@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { useAuth } from './features/auth/useAuth'
 import { AuthBar } from './features/auth/AuthBar'
 import { CalendarView } from './features/calendar/CalendarView'
-import { LectureHallEmbed } from './features/lecture-hall/LectureHallEmbed'
 import { LectureHallGrid } from './features/lecture-hall/LectureHallGrid'
 import { BandBoard } from './features/bands/BandBoard'
 import { IntentBoard } from './features/intents/IntentBoard'
@@ -66,10 +65,6 @@ export default function App() {
             <section className="lecture-hall-section">
               <h2>講義棟 空き状況</h2>
               <LectureHallGrid />
-              <details className="lh-fallback">
-                <summary>元サイトの表示（iframe）を開く</summary>
-                <LectureHallEmbed />
-              </details>
             </section>
           </>
         )}
