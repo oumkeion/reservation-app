@@ -1,0 +1,190 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+  color: #222;
+  background: #fafafa;
+}
+
+.app {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 12px 40px;
+}
+
+.app-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 0;
+}
+
+.app-header h1 {
+  font-size: 1.2rem;
+  margin: 0;
+}
+
+.auth-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 2px solid #ddd;
+  margin-bottom: 12px;
+}
+
+.tab {
+  border: none;
+  background: none;
+  padding: 8px 16px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+}
+
+.tab.active {
+  border-bottom-color: #1976d2;
+  color: #1976d2;
+  font-weight: bold;
+}
+
+button {
+  font: inherit;
+  padding: 6px 14px;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #f0f0f0;
+}
+
+button.primary {
+  background: #1976d2;
+  border-color: #1976d2;
+  color: #fff;
+}
+
+button.danger {
+  background: #d32f2f;
+  border-color: #d32f2f;
+  color: #fff;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* 凡例 */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 0.85rem;
+  margin-bottom: 8px;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+/* ダイアログ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  width: min(420px, 92vw);
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.modal-content h3 {
+  margin-top: 0;
+}
+
+.modal-content label {
+  display: block;
+  margin: 10px 0;
+  font-size: 0.9rem;
+}
+
+.modal-content input,
+.modal-content select {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 6px 8px;
+  font: inherit;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+}
+
+.dialog-time {
+  color: #555;
+  font-size: 0.9rem;
+}
+
+.dialog-editor {
+  color: #555;
+  font-size: 0.85rem;
+}
+
+.dialog-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.error-bar {
+  background: #fdecea;
+  color: #b71c1c;
+  padding: 8px 12px;
+  border-radius: 4px;
+}
+
+.placeholder {
+  color: #777;
+  padding: 24px 0;
+  text-align: center;
+}
+
+/* スマホ */
+@media (max-width: 600px) {
+  .app-header h1 {
+    font-size: 1rem;
+  }
+}

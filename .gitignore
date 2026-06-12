@@ -7,8 +7,17 @@
 
 # Public directory specific files
 public/.DS_Store
-*.json
+
+# Service account keys — NEVER commit (鍵ファイルは絶対にコミットしない)
+*adminsdk*.json
+*service-account*.json
+*serviceAccount*.json
+local/
 
 # Firebase debug logs
 firestore-debug.log
 *-debug.log
+
+# Node
+node_modules/
+app/dist/
