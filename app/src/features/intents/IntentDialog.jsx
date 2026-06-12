@@ -1,24 +1,12 @@
-// 予約入力ダイアログ
-// ログイン不要: バンド名・記入者名は手入力（旧アプリと同じ）。
-// 管理者ログイン中は固定枠・音出し禁止も選択可能。
+// 狙い表明の入力ダイアログ
+// 予約ではないので検証ルールは無し。複数人が同じ枠を宣言できる。
 import { useState } from 'react'
-import {
-  TYPE_LABELS,
-  MEMBER_SELECTABLE_TYPES,
-  EVENT_TYPES,
-} from '../../lib/eventTypes'
-import { ValidationFailure } from './errors'
 
-export function ReserveDialog({ range, isAdmin, onSave, onClose }) {
+export function IntentDialog({ range, onSave, onClose }) {
   const [title, setTitle] = useState('')
   const [editor, setEditor] = useState('')
-  const [type, setType] = useState(EVENT_TYPES.CONFIRMED)
   const [comment, setComment] = useState('')
   const [saving, setSaving] = useState(false)
-
-  const selectableTypes = isAdmin
-    ? [...MEMBER_SELECTABLE_TYPES, EVENT_TYPES.FIXED, EVENT_TYPES.NO_SOUND]
-    : MEMBER_SELECTABLE_TYPES
 
   const handleSave = async () => {
     if (!title.trim() || !editor.trim()) {
@@ -27,13 +15,11 @@ export function ReserveDialog({ range, isAdmin, onSave, onClose }) {
     }
     setSaving(true)
     try {
-      await onSave({ title: title.trim(), editor: editor.trim(), type, comment: comment.trim() })
+      await onSave({ title: title.trim(), editor: editor.trim(), comment: comment.trim() })
       onClose()
     } catch (err) {
-      console.error('予約の追加に失敗:', err)
-      if (!(err instanceof ValidationFailure)) {
-        alert('予約の追加に失敗しました。')
-      }
+      console.error('狙い表明の登録に失敗:', err)
+      alert('狙い表明の登録に失敗しました。')
     } finally {
       setSaving(false)
     }
@@ -50,9 +36,12 @@ export function ReserveDialog({ range, isAdmin, onSave, onClose }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <h3>予約入力</h3>
+        <h3>狙い表明</h3>
         <p className="dialog-time">
           {fmt(range.start)} 〜 {fmt(range.end)}
+        </p>
+        <p className="dialog-editor">
+          予約ではなく「この時間を狙っている」という宣言です。複数のバンドが同じ枠を宣言できます。
         </p>
         <label>
           バンド名（必須）
@@ -74,16 +63,6 @@ export function ReserveDialog({ range, isAdmin, onSave, onClose }) {
           />
         </label>
         <label>
-          種別
-          <select value={type} onChange={(e) => setType(e.target.value)}>
-            {selectableTypes.map((t) => (
-              <option key={t} value={t}>
-                {TYPE_LABELS[t]}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
           コメント
           <input
             type="text"
@@ -98,7 +77,7 @@ export function ReserveDialog({ range, isAdmin, onSave, onClose }) {
             onClick={handleSave}
             disabled={saving || !title.trim() || !editor.trim()}
           >
-            {saving ? '保存中…' : '保存'}
+            {saving ? '登録中…' : '登録'}
           </button>
         </div>
       </div>

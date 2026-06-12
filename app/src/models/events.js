@@ -1,6 +1,6 @@
 // events / logs コレクションへの読み書き
-// ドキュメント形式は旧アプリと互換:
-//   { title, start, end, allDay, createdByUid?, extendedProps: { type, comment, editor } }
+// 予約はログイン不要（匿名）。ドキュメント形式は旧アプリと互換:
+//   { title, start, end, allDay, extendedProps: { type, comment, editor } }
 import {
   collection,
   addDoc,
@@ -22,13 +22,12 @@ export function subscribeEvents(onChange, onError) {
   )
 }
 
-export async function addEvent({ title, start, end, type, comment, editor, uid }) {
+export async function addEvent({ title, start, end, type, comment, editor }) {
   const event = {
     title,
     start,
     end,
     allDay: false,
-    createdByUid: uid,
     extendedProps: { type, comment, editor },
   }
   const ref = await addDoc(collection(db, 'events'), event)

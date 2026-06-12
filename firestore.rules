@@ -5,13 +5,22 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // 管理者判定: admins コレクションに自分のメールのドキュメントが存在するか（旧アプリと同じ）
+    function isAdmin() {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.token.email));
+    }
+
+    function isProtectedType(data) {
+      return data.extendedProps.type in ['fixed', 'no-sound'];
+    }
+
     match /events/{eventId} {
       allow read: if true;
-      allow create: if request.auth != null;
-      // 削除・変更は作成者本人か管理者のみ（新アプリは createdByUid を保存する）
-      allow update, delete: if request.auth != null &&
-        (request.auth.token.admin == true ||
-         request.auth.uid == resource.data.createdByUid);
+      // 予約はログイン不要（匿名）。固定枠・音出し禁止は管理者のみ作成可。
+      allow create: if isProtectedType(request.resource.data) ? isAdmin() : true;
+      // 削除・変更も同様。通常枠はクライアント側の本人確認(記入者名)で運用する（旧アプリと同じ方式）。
+      allow update, delete: if isProtectedType(resource.data) ? isAdmin() : true;
     }
 
     match /admins/{adminId} {
@@ -40,11 +49,20 @@ service cloud.firestore {
       allow create, update: if request.auth != null && request.auth.uid == userId;
     }
 
-    // バンド（新アプリ用）: 誰でも閲覧、ログイン部員が作成・更新（解散フラグ等）
+    // バンド（バンド掲示板）: ログイン不要（予約と同じ匿名運用）。
+    // 作成は自由。更新は「解散」（status: disbanded への変更のみ）に限定する。
     match /bands/{bandId} {
       allow read: if true;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null;
+      allow create: if true;
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']) &&
+        request.resource.data.status == 'disbanded';
+    }
+
+    // 狙い表明（15分グリッド）: 予約と同じくログイン不要・誰でも宣言・削除できる。
+    match /slotIntents/{intentId} {
+      allow read: if true;
+      allow create: if true;
+      allow delete: if true;
     }
   }
 }

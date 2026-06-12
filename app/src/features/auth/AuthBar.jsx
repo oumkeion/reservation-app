@@ -1,13 +1,14 @@
 // 画面上部のログイン状態表示バー
-export function AuthBar({ profile, loading, login, logout }) {
+// ログインは管理者操作・バンド機能のために任意。予約自体には不要なことを明示する。
+export function AuthBar({ profile, isAdmin, loading, login, logout }) {
   if (loading) {
     return <div className="auth-bar">読み込み中…</div>
   }
   if (!profile) {
     return (
       <div className="auth-bar">
-        <span>予約するには Google アカウントでログインしてください</span>
-        <button onClick={login}>ログイン</button>
+        <span className="auth-hint">予約に必要なログインはありません</span>
+        <button onClick={login}>管理者ログイン</button>
       </div>
     )
   }
@@ -15,7 +16,7 @@ export function AuthBar({ profile, loading, login, logout }) {
     <div className="auth-bar">
       <span>
         {profile.displayName || profile.email}
-        {profile.role === 'admin' && '（管理者）'}
+        {isAdmin && <span className="admin-badge">管理者</span>}
       </span>
       <button onClick={logout}>ログアウト</button>
     </div>

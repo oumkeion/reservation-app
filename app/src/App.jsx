@@ -4,6 +4,9 @@ import { useState } from 'react'
 import { useAuth } from './features/auth/useAuth'
 import { AuthBar } from './features/auth/AuthBar'
 import { CalendarView } from './features/calendar/CalendarView'
+import { LectureHallEmbed } from './features/lecture-hall/LectureHallEmbed'
+import { BandBoard } from './features/bands/BandBoard'
+import { IntentBoard } from './features/intents/IntentBoard'
 import { TYPE_LABELS, TYPE_COLORS, EVENT_TYPES } from './lib/eventTypes'
 
 const TABS = [
@@ -33,7 +36,13 @@ export default function App() {
     <div className="app">
       <header className="app-header">
         <h1>軽音部 部室予約システム</h1>
-        <AuthBar profile={profile} loading={loading} login={login} logout={logout} />
+        <AuthBar
+          profile={profile}
+          isAdmin={isAdmin}
+          loading={loading}
+          login={login}
+          logout={logout}
+        />
       </header>
 
       <nav className="tabs">
@@ -53,10 +62,14 @@ export default function App() {
           <>
             <Legend />
             <CalendarView profile={profile} isAdmin={isAdmin} />
+            <LectureHallEmbed />
           </>
         )}
         {tab === 'bands' && (
-          <p className="placeholder">バンド一覧・狙い表明は準備中です（Phase 1）。</p>
+          <>
+            <BandBoard />
+            <IntentBoard />
+          </>
         )}
         {tab === 'board' && (
           <p className="placeholder">掲示板は準備中です（Phase 2）。</p>

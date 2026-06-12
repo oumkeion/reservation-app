@@ -1,5 +1,6 @@
-// bands コレクション: バンド情報（Phase 1 バンド掲示板の土台）
-// 方針: 部員が自由に作成。解散は status フラグで管理（一覧は active のみ数える）。
+// bands コレクション: バンド情報（バンド掲示板の土台）
+// 予約と同様にログイン不要。代表者名は手入力（記入者名と同じ運用）。
+// 解散は status フラグで管理（一覧は active のみ表示）。
 import {
   collection,
   addDoc,
@@ -33,13 +34,12 @@ export function subscribeActiveBands(onChange, onError) {
   )
 }
 
-export async function createBand({ name, genre, uid }) {
+export async function createBand({ name, genre, representative }) {
   const band = {
     name,
     genre: genre || '',
-    memberUids: [uid],
+    representative,
     status: BAND_STATUS.ACTIVE,
-    createdByUid: uid,
     createdAt: serverTimestamp(),
   }
   const ref = await addDoc(collection(db, 'bands'), band)

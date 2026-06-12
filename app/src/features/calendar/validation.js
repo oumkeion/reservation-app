@@ -1,23 +1,28 @@
 // 予約ルールの検証（旧 script.js validateReservation の移植）
 // 戻り値: エラーメッセージ文字列 / 問題なければ null
+//
+// 予約はログイン不要なので、確定枠の週1制限は「記入者名」の一致で判定する（旧アプリと同じ）。
 import { EVENT_TYPES } from '../../lib/eventTypes'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
-export function validateReservation({ type, start, now, uid, isAdmin, allEvents }) {
+export function validateReservation({ type, editor, start, now, isAdmin, allEvents }) {
   if (type === EVENT_TYPES.FIXED && !isAdmin) {
     return '固定枠は管理者のみ予約できます。'
+  }
+  if (type === EVENT_TYPES.NO_SOUND && !isAdmin) {
+    return '音出し禁止時間は管理者のみ設定できます。'
   }
 
   if (type === EVENT_TYPES.CONFIRMED) {
     if ((start - now) / DAY_MS > 7) {
       return '確定枠は1週間先までしか予約できません。'
     }
-    // 同一ユーザーが終了していない確定枠をすでに持っていれば不可（週1ルール）
+    // 同一記入者が終了していない確定枠をすでに持っていれば不可（週1ルール）
     const existing = allEvents.find(
       (e) =>
         e.extendedProps?.type === EVENT_TYPES.CONFIRMED &&
-        e.createdByUid === uid &&
+        e.extendedProps?.editor === editor &&
         new Date(e.end) > now,
     )
     if (existing) {

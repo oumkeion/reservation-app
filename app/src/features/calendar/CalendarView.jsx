@@ -1,5 +1,6 @@
 // 予約カレンダー画面（旧アプリの中核機能の移植）
 // 15分単位ドラッグ選択 → 予約ダイアログ / クリック → 詳細・削除
+// 予約はログイン不要。Googleログインは管理者操作（固定枠・音出し禁止の予約、確認なし削除）にのみ使う。
 import { useState, useCallback } from 'react'
 import FullCalendar from '@fullcalendar/react'
 import timeGridPlugin from '@fullcalendar/timegrid'
@@ -8,6 +9,7 @@ import interactionPlugin from '@fullcalendar/interaction'
 import { useEvents } from './useEvents'
 import { validateReservation } from './validation'
 import { ReserveDialog } from './ReserveDialog'
+import { ValidationFailure } from './errors'
 import { EventDetailDialog } from './EventDetailDialog'
 import { addEvent, deleteEvent } from '../../models/events'
 import { EVENT_TYPES } from '../../lib/eventTypes'
@@ -17,17 +19,10 @@ export function CalendarView({ profile, isAdmin }) {
   const [selectedRange, setSelectedRange] = useState(null)
   const [selectedEvent, setSelectedEvent] = useState(null)
 
-  // ドラッグ選択 → 予約ダイアログを開く
-  const handleSelect = useCallback(
-    (info) => {
-      if (!profile) {
-        alert('予約するにはログインしてください。')
-        return
-      }
-      setSelectedRange({ start: info.start, end: info.end })
-    },
-    [profile],
-  )
+  // ドラッグ選択 → 予約ダイアログを開く（ログイン不要）
+  const handleSelect = useCallback((info) => {
+    setSelectedRange({ start: info.start, end: info.end })
+  }, [])
 
   // 予約イベントクリック → 詳細ダイアログ（音出し禁止の背景は対象外）
   const handleEventClick = useCallback(
@@ -40,18 +35,18 @@ export function CalendarView({ profile, isAdmin }) {
     [events],
   )
 
-  const handleSave = async ({ title, type, comment }) => {
+  const handleSave = async ({ title, editor, type, comment }) => {
     const validationError = validateReservation({
       type,
+      editor,
       start: selectedRange.start,
       now: new Date(),
-      uid: profile.uid,
       isAdmin,
       allEvents: events,
     })
     if (validationError) {
       alert(validationError)
-      throw new Error(validationError)
+      throw new ValidationFailure(validationError)
     }
     await addEvent({
       title,
@@ -59,13 +54,11 @@ export function CalendarView({ profile, isAdmin }) {
       end: selectedRange.end.toISOString(),
       type,
       comment,
-      editor: profile.displayName || profile.email,
-      uid: profile.uid,
+      editor,
     })
   }
 
-  const handleDelete = (event) =>
-    deleteEvent(event, profile.displayName || profile.email)
+  const handleDelete = (event, deleterName) => deleteEvent(event, deleterName)
 
   return (
     <div className="calendar-view">
@@ -80,7 +73,7 @@ export function CalendarView({ profile, isAdmin }) {
         allDaySlot={false}
         slotDuration="00:15:00"
         slotLabelInterval="01:00"
-        selectable={!!profile}
+        selectable
         selectMirror
         events={calendarEvents}
         select={handleSelect}
@@ -95,7 +88,6 @@ export function CalendarView({ profile, isAdmin }) {
       {selectedRange && (
         <ReserveDialog
           range={selectedRange}
-          profile={profile}
           isAdmin={isAdmin}
           onSave={handleSave}
           onClose={() => setSelectedRange(null)}
@@ -104,8 +96,8 @@ export function CalendarView({ profile, isAdmin }) {
       {selectedEvent && (
         <EventDetailDialog
           event={selectedEvent}
-          profile={profile}
           isAdmin={isAdmin}
+          adminName={profile?.displayName || profile?.email}
           onDelete={handleDelete}
           onClose={() => setSelectedEvent(null)}
         />
