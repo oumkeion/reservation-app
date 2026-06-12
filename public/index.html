@@ -11,6 +11,9 @@
 </head>
 
 <body>
+  <!-- ナビバーの直下など見えやすい位置 -->
+  <div id="noticeBar" style="padding: 1rem; text-align: center; background-color: #f0f0f0; border-bottom: 1px solid #ddd;"></div>
+
   <!-- 操作ボタン群 -->
   <button id="toggleAdminMode">管理者モードに切り替える</button>
   <button id="adminBtn">音出し禁止時間の追加</button>
@@ -119,6 +122,16 @@
       <textarea id="dailyMemoText" rows="5" style="width: 95%; margin-top: 8px;"></textarea><br>
       <button id="dailyMemoSaveBtn" style="margin-top: 8px;">メモを保存</button>
       <button id="dailyMemoDeleteBtn" style="margin-top: 8px; background-color: #f44336;">メモを削除</button>
+    </div>
+  </div>
+
+  <!-- お知らせ編集モーダル -->
+  <div id="editNoticeModal" class="modal">
+    <div class="modal-content">
+      <span id="editNoticeCloseBtn" class="close">&times;</span>
+      <h3>お知らせの編集</h3>
+      <textarea id="noticeInput" style="width: 95%;" rows="4"></textarea>
+      <button id="saveNoticeBtn">保存</button>
     </div>
   </div>
 

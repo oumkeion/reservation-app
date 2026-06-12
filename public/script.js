@@ -9,6 +9,22 @@ document.addEventListener('DOMContentLoaded', function() {
   // Firebaseのインスタンスを初期化
   const db = firebase.firestore();
 
+  // --- お知らせ機能 ---
+  const noticeBar = document.getElementById('noticeBar');
+  let noticeDocRef;
+
+  db.collection('settings').doc('notice').onSnapshot(doc => {
+    if (doc.exists) {
+      noticeBar.textContent = doc.data().text;
+      noticeDocRef = doc.ref;
+    } else {
+      noticeBar.textContent = 'お知らせはありません。';
+    }
+  }, err => {
+    console.error('お知らせの読み込みに失敗:', err);
+    noticeBar.textContent = 'お知らせの読み込みに失敗しました。';
+  });
+
   // 1) 今日の日付を先に定義
   const today = new Date();
   const calendarEl = document.getElementById('calendar');
@@ -64,6 +80,12 @@ document.addEventListener('DOMContentLoaded', function() {
   const dailyMemoTextEl = document.getElementById('dailyMemoText');
   const dailyMemoSaveBtn = document.getElementById('dailyMemoSaveBtn');
   const dailyMemoDeleteBtn = document.getElementById('dailyMemoDeleteBtn');
+
+  // お知らせモーダルの要素取得
+  const editNoticeModal = document.getElementById('editNoticeModal');
+  const editNoticeCloseBtn = document.getElementById('editNoticeCloseBtn');
+  const noticeInput = document.getElementById('noticeInput');
+  const saveNoticeBtn = document.getElementById('saveNoticeBtn');
 
   let currentUser = null; // ログイン中のユーザー情報を保持
   let isAdminMode = false;
@@ -369,6 +391,24 @@ document.addEventListener('DOMContentLoaded', function() {
     isAdminMode = isAuthorizedAdmin;
     document.body.classList.toggle('admin-mode', isAdminMode);
     toggleAdminModeBtn.textContent = isAdminMode ? "ログアウト" : "管理者ログイン";
+
+    // お知らせの編集ボタンを表示
+    if (isAdminMode) {
+      const editNoticeBtn = document.createElement('button');
+      editNoticeBtn.textContent = '編集';
+      editNoticeBtn.id = 'editNoticeBtn';
+      noticeBar.appendChild(editNoticeBtn);
+
+      editNoticeBtn.onclick = () => {
+        noticeInput.value = noticeBar.firstChild.textContent.trim();
+        editNoticeModal.style.display = 'block';
+      };
+    } else {
+      const editBtn = document.getElementById('editNoticeBtn');
+      if (editBtn) {
+        editBtn.remove();
+      }
+    }
 
     updateFixedOptionVisibility();
   });
@@ -4333,5 +4373,21 @@ document.addEventListener('DOMContentLoaded', function() {
     if (event.target == fixedSlotModal) fixedSlotModal.style.display = "none";
     if (event.target == eventDetailModal) eventDetailModal.style.display = "none";
     if (event.target == dailyMemoModal) dailyMemoModal.style.display = "none";
+    if (event.target == editNoticeModal) editNoticeModal.style.display = "none";
   }
+
+  editNoticeCloseBtn.onclick = () => editNoticeModal.style.display = 'none';
+
+  saveNoticeBtn.onclick = async () => {
+    const newText = noticeInput.value.trim();
+    if (noticeDocRef) {
+      try {
+        await noticeDocRef.set({ text: newText });
+        editNoticeModal.style.display = 'none';
+      } catch (err) {
+        alert('お知らせの保存に失敗しました。');
+        console.error(err);
+      }
+    }
+  };
 });

@@ -8,3 +8,7 @@
 # Public directory specific files
 public/.DS_Store
 *.json
+
+# Firebase debug logs
+firestore-debug.log
+*-debug.log
