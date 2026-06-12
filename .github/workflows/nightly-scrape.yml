@@ -32,6 +32,8 @@ jobs:
       - name: Run scraper (parse + upload to Firestore)
         run: python public/scraper_requests.py
         env:
+          RESV_USER_ID: ${{ secrets.RESV_USER_ID }}
+          RESV_PASSWORD: ${{ secrets.RESV_PASSWORD }}
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
       - name: Commit JSON (backup + keep schedule alive)

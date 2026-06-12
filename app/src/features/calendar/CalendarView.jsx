@@ -15,6 +15,7 @@ import { EventDetailDialog } from './EventDetailDialog'
 import { addEvent, deleteEvent } from '../../models/events'
 import { EVENT_TYPES } from '../../lib/eventTypes'
 import { useLectureHall } from '../lecture-hall/useLectureHall'
+import { LectureHallDetailDialog } from '../lecture-hall/LectureHallDetailDialog'
 
 export function CalendarView({ profile, isAdmin }) {
   const { events, calendarEvents, error } = useEvents()
@@ -27,22 +28,31 @@ export function CalendarView({ profile, isAdmin }) {
   const [showLectureHall, setShowLectureHall] = useState(true)
   const [selectedRange, setSelectedRange] = useState(null)
   const [selectedEvent, setSelectedEvent] = useState(null)
+  const [selectedLhEvent, setSelectedLhEvent] = useState(null)
 
   // ドラッグ選択 → 予約ダイアログを開く（ログイン不要）
   const handleSelect = useCallback((info) => {
     setSelectedRange({ start: info.start, end: info.end })
   }, [])
 
-  // 予約イベントクリック → 詳細ダイアログ（音出し禁止の背景・講義棟予約は対象外）
+  // 予約イベントクリック → 詳細ダイアログ
+  // 講義棟予約 → 講義棟詳細（団体・内容・音出し可否）
+  // 音出し禁止 → 管理者のみ詳細を開ける（削除可能。自動生成分は翌晩再生成される）
   const handleEventClick = useCallback(
     (info) => {
-      if (info.event.extendedProps?.lectureHall) return
-      const original = events.find((e) => e.id === info.event.id)
-      if (original && original.extendedProps?.type !== EVENT_TYPES.NO_SOUND) {
-        setSelectedEvent(original)
+      if (info.event.extendedProps?.lectureHall) {
+        setSelectedLhEvent({
+          start: info.event.start,
+          extendedProps: info.event.extendedProps,
+        })
+        return
       }
+      const original = events.find((e) => e.id === info.event.id)
+      if (!original) return
+      if (original.extendedProps?.type === EVENT_TYPES.NO_SOUND && !isAdmin) return
+      setSelectedEvent(original)
     },
-    [events],
+    [events, isAdmin],
   )
 
   const handleSave = async ({ title, editor, type, comment }) => {
@@ -70,9 +80,16 @@ export function CalendarView({ profile, isAdmin }) {
 
   const handleDelete = (event, deleterName) => deleteEvent(event, deleterName)
 
-  const mergedEvents = showLectureHall
-    ? [...calendarEvents, ...lectureHallEvents]
+  // 音出し禁止は通常は背景表示（クリック不可）だが、管理者には通常イベントとして
+  // 表示してクリック→削除できるようにする（FullCalendarの背景イベントはクリック不可のため）
+  const clubEvents = isAdmin
+    ? calendarEvents.map((e) =>
+        e.extendedProps?.type === EVENT_TYPES.NO_SOUND ? { ...e, display: 'auto' } : e,
+      )
     : calendarEvents
+  const mergedEvents = showLectureHall
+    ? [...clubEvents, ...lectureHallEvents]
+    : clubEvents
 
   return (
     <div className="calendar-view">
@@ -140,6 +157,12 @@ export function CalendarView({ profile, isAdmin }) {
           adminName={profile?.displayName || profile?.email}
           onDelete={handleDelete}
           onClose={() => setSelectedEvent(null)}
+        />
+      )}
+      {selectedLhEvent && (
+        <LectureHallDetailDialog
+          event={selectedLhEvent}
+          onClose={() => setSelectedLhEvent(null)}
         />
       )}
     </div>

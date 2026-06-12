@@ -57,7 +57,7 @@ export function useLectureHall() {
     return unsubscribe
   }, [])
 
-  // FullCalendar イベント形式（クリック・編集不可の表示専用）
+  // FullCalendar イベント形式（編集不可、クリックで詳細表示）
   const lectureHallEvents = useMemo(() => {
     if (!data) return []
     const roomNames = Object.fromEntries(
@@ -67,15 +67,24 @@ export function useLectureHall() {
     for (const [date, schedules] of Object.entries(data.days || {})) {
       for (const [roomId, slots] of Object.entries(schedules)) {
         slots.forEach((slot, i) => {
+          const room = roomNames[roomId] || `部屋${roomId}`
           events.push({
             id: `lh-${date}-${roomId}-${i}`,
-            title: roomNames[roomId] || `部屋${roomId}`,
+            title: slot.org ? `${room}：${slot.org}` : room,
             start: `${date}T${slot.start}:00`,
             end: `${date}T${slot.end}:00`,
             backgroundColor: LECTURE_HALL_COLOR,
             borderColor: LECTURE_HALL_COLOR,
             editable: false,
-            extendedProps: { lectureHall: true },
+            extendedProps: {
+              lectureHall: true,
+              room,
+              org: slot.org || '不明',
+              label: slot.label || '',
+              sound: slot.sound || '不明',
+              startTime: slot.start,
+              endTime: slot.end,
+            },
           })
         })
       }
