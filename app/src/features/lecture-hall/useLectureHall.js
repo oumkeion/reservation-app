@@ -1,15 +1,17 @@
 // 講義棟空き状況データの購読フック
 // Firestore (settings/lectureHall) をリアルタイム購読し、読めない場合は
 // 静的ファイル /htmls/lecture-hall.json にフォールバックする。
-// 予約カレンダーに重ねられるよう FullCalendar 形式のイベント配列に変換して返す。
+// メインカレンダー用の「音出し禁止」背景イベントと、部屋別表示用の生データを返す。
 import { useEffect, useMemo, useState } from 'react'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '../../lib/firebase'
+import { TYPE_COLORS, EVENT_TYPES } from '../../lib/eventTypes'
 
 // データが36時間以上古ければ「夜間更新が止まっている」とみなして警告する
 const STALE_THRESHOLD_MS = 36 * 60 * 60 * 1000
 
 export const LECTURE_HALL_COLOR = '#FFD8A8'
+export const SOUND_OK_COLOR = '#A5D6A7'
 
 // "1階 A講堂" → "A講堂"（週表示の狭いセルでも読めるように階数を省く）
 function shortRoomName(name) {
@@ -57,43 +59,41 @@ export function useLectureHall() {
     return unsubscribe
   }, [])
 
-  // FullCalendar イベント形式（編集不可、クリックで詳細表示）
-  const lectureHallEvents = useMemo(() => {
+  // メインカレンダー用: 音出し禁止帯（「音出し不可」予約の日毎和集合）を
+  // 灰色の背景イベントとして返す。スクレイプデータから直接導出するので常に最新。
+  const noSoundEvents = useMemo(() => {
     if (!data) return []
-    const roomNames = Object.fromEntries(
-      (data.rooms || []).map((r) => [String(r.id), shortRoomName(r.name)]),
-    )
+    const color = TYPE_COLORS[EVENT_TYPES.NO_SOUND]
     const events = []
-    for (const [date, schedules] of Object.entries(data.days || {})) {
-      for (const [roomId, slots] of Object.entries(schedules)) {
-        slots.forEach((slot, i) => {
-          const room = roomNames[roomId] || `部屋${roomId}`
-          events.push({
-            id: `lh-${date}-${roomId}-${i}`,
-            title: slot.org ? `${room}：${slot.org}` : room,
-            start: `${date}T${slot.start}:00`,
-            end: `${date}T${slot.end}:00`,
-            backgroundColor: LECTURE_HALL_COLOR,
-            borderColor: LECTURE_HALL_COLOR,
-            editable: false,
-            extendedProps: {
-              lectureHall: true,
-              room,
-              org: slot.org || '不明',
-              label: slot.label || '',
-              sound: slot.sound || '不明',
-              startTime: slot.start,
-              endTime: slot.end,
-            },
-          })
+    for (const [date, ranges] of Object.entries(data.noSound || {})) {
+      ranges.forEach((r, i) => {
+        events.push({
+          id: `lh-nosound-${date}-${i}`,
+          title: '音出し禁止（講義棟使用中）',
+          start: `${date}T${r.start}:00`,
+          end: `${date}T${r.end}:00`,
+          display: 'background',
+          backgroundColor: color,
+          borderColor: color,
+          editable: false,
+          extendedProps: { lectureHallNoSound: true },
         })
-      }
+      })
     }
     return events
   }, [data])
 
+  // 部屋別カレンダー用に部屋名を短縮した生データも返す
+  const rooms = useMemo(
+    () =>
+      (data?.rooms || []).map((r) => ({ ...r, shortName: shortRoomName(r.name) })),
+    [data],
+  )
+
   return {
-    lectureHallEvents,
+    data,
+    rooms,
+    noSoundEvents,
     updatedAt: data?.updatedAt ? new Date(data.updatedAt) : null,
     isStale,
     error,

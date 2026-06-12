@@ -15,17 +15,19 @@ import { EventDetailDialog } from './EventDetailDialog'
 import { addEvent, deleteEvent } from '../../models/events'
 import { EVENT_TYPES } from '../../lib/eventTypes'
 import { useLectureHall } from '../lecture-hall/useLectureHall'
+import { LectureHallBoard } from '../lecture-hall/LectureHallBoard'
 import { LectureHallDetailDialog } from '../lecture-hall/LectureHallDetailDialog'
 
 export function CalendarView({ profile, isAdmin }) {
   const { events, calendarEvents, error } = useEvents()
   const {
-    lectureHallEvents,
+    data: lhData,
+    rooms: lhRooms,
+    noSoundEvents,
     updatedAt: lhUpdatedAt,
     isStale: lhStale,
     error: lhError,
   } = useLectureHall()
-  const [showLectureHall, setShowLectureHall] = useState(true)
   const [selectedRange, setSelectedRange] = useState(null)
   const [selectedEvent, setSelectedEvent] = useState(null)
   const [selectedLhEvent, setSelectedLhEvent] = useState(null)
@@ -36,17 +38,9 @@ export function CalendarView({ profile, isAdmin }) {
   }, [])
 
   // 予約イベントクリック → 詳細ダイアログ
-  // 講義棟予約 → 講義棟詳細（団体・内容・音出し可否）
-  // 音出し禁止 → 管理者のみ詳細を開ける（削除可能。自動生成分は翌晩再生成される）
+  // 音出し禁止（手動作成分）→ 管理者のみ詳細を開ける（削除可能）
   const handleEventClick = useCallback(
     (info) => {
-      if (info.event.extendedProps?.lectureHall) {
-        setSelectedLhEvent({
-          start: info.event.start,
-          extendedProps: info.event.extendedProps,
-        })
-        return
-      }
       const original = events.find((e) => e.id === info.event.id)
       if (!original) return
       if (original.extendedProps?.type === EVENT_TYPES.NO_SOUND && !isAdmin) return
@@ -80,46 +74,32 @@ export function CalendarView({ profile, isAdmin }) {
 
   const handleDelete = (event, deleterName) => deleteEvent(event, deleterName)
 
-  // 音出し禁止は通常は背景表示（クリック不可）だが、管理者には通常イベントとして
-  // 表示してクリック→削除できるようにする（FullCalendarの背景イベントはクリック不可のため）
+  // 音出し禁止（手動作成分）は通常は背景表示（クリック不可）だが、管理者には通常イベント
+  // として表示してクリック→削除できるようにする（FullCalendarの背景イベントはクリック不可のため）
   const clubEvents = isAdmin
     ? calendarEvents.map((e) =>
         e.extendedProps?.type === EVENT_TYPES.NO_SOUND ? { ...e, display: 'auto' } : e,
       )
     : calendarEvents
-  const mergedEvents = showLectureHall
-    ? [...clubEvents, ...lectureHallEvents]
-    : clubEvents
+  // 講義棟由来の音出し禁止帯（自動・常に最新）を灰色の背景として重ねる
+  const mergedEvents = [...clubEvents, ...noSoundEvents]
 
   return (
     <div className="calendar-view">
       {error && (
         <p className="error-bar">予約データの読み込みに失敗しました。再読み込みしてください。</p>
       )}
-      {showLectureHall && lhStale && (
+      {lhStale && (
         <p className="error-bar">
-          ⚠️ 講義棟の予約データが36時間以上更新されていません。夜間の自動取得が止まっている可能性があります
-          （GitHub Actions の「Nightly Scrape」を確認してください）。
+          ⚠️ 講義棟の予約データが36時間以上更新されていません（音出し禁止帯が古い可能性があります）。
+          GitHub Actions の「Nightly Scrape」を確認してください。
         </p>
       )}
-      <div className="calendar-toolbar">
-        <label className="lh-toggle">
-          <input
-            type="checkbox"
-            checked={showLectureHall}
-            onChange={(e) => setShowLectureHall(e.target.checked)}
-          />
-          講義棟の予約状況を表示
-        </label>
-        {showLectureHall && !lhError && (
-          <span className="lh-updated">
-            講義棟データ更新: {lhUpdatedAt ? lhUpdatedAt.toLocaleString('ja-JP') : '読み込み中…'}
-          </span>
-        )}
-        {showLectureHall && lhError && (
-          <span className="lh-updated">講義棟データの読み込みに失敗しました</span>
-        )}
-      </div>
+      {lhError && (
+        <p className="error-bar">
+          講義棟データの読み込みに失敗したため、音出し禁止帯が表示されていません。
+        </p>
+      )}
       <FullCalendar
         plugins={[timeGridPlugin, dayGridPlugin, interactionPlugin]}
         initialView="timeGridWeek"
@@ -142,6 +122,15 @@ export function CalendarView({ profile, isAdmin }) {
         }}
         buttonText={{ today: '今日', week: '週', day: '日', month: '月' }}
       />
+      <section className="lecture-hall-section">
+        <h2>講義棟予約カレンダー</h2>
+        <p className="lh-updated">
+          {lhError
+            ? '読み込みに失敗しました'
+            : `データ更新: ${lhUpdatedAt ? lhUpdatedAt.toLocaleString('ja-JP') : '読み込み中…'}（毎晩自動取得）`}
+        </p>
+        <LectureHallBoard data={lhData} rooms={lhRooms} onSelectSlot={setSelectedLhEvent} />
+      </section>
       {selectedRange && (
         <ReserveDialog
           range={selectedRange}

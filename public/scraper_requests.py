@@ -250,58 +250,6 @@ def write_json(data: Dict) -> None:
     print(f"✅ JSON保存完了: {OUT_PATH} ({len(data['days'])}日分, {len(data['rooms'])}部屋)")
 
 
-AUTO_EVENT_SOURCE = "lectureHallAuto"
-
-
-def sync_no_sound_events(db, no_sound: Dict[str, List[Dict]]) -> None:
-    """音出し禁止帯を events コレクションに同期する（自動生成分のみ毎回入れ替え）。
-
-    自動生成イベントは extendedProps.source で識別する。手動で作成された
-    音出し禁止イベントには触れない。管理者がアプリ側で削除しても翌晩復活する点に注意。
-    """
-    existing = list(
-        db.collection("events")
-        .where("extendedProps.source", "==", AUTO_EVENT_SOURCE)
-        .stream()
-    )
-    batch = db.batch()
-    ops = 0
-
-    def flush(b, n):
-        if n:
-            b.commit()
-        return db.batch(), 0
-
-    for doc in existing:
-        batch.delete(doc.reference)
-        ops += 1
-        if ops >= 400:
-            batch, ops = flush(batch, ops)
-
-    created = 0
-    for date_str, ranges in sorted(no_sound.items()):
-        for r in ranges:
-            ref = db.collection("events").document()
-            batch.set(ref, {
-                "title": "音出し禁止（講義棟使用中）",
-                "start": f"{date_str}T{r['start']}:00+09:00",
-                "end": f"{date_str}T{r['end']}:00+09:00",
-                "allDay": False,
-                "extendedProps": {
-                    "type": "no-sound",
-                    "comment": "講義棟の利用予定から自動生成",
-                    "editor": "自動取得",
-                    "source": AUTO_EVENT_SOURCE,
-                },
-            })
-            ops += 1
-            created += 1
-            if ops >= 400:
-                batch, ops = flush(batch, ops)
-    flush(batch, ops)
-    print(f"✅ 音出し禁止イベントを同期: 旧{len(existing)}件を削除、新{created}件を作成")
-
-
 def upload_to_firestore(data: Dict) -> None:
     """FIREBASE_SERVICE_ACCOUNT があれば Firestore に書き込む（無ければスキップ）。"""
     sa_json: Optional[str] = os.environ.get("FIREBASE_SERVICE_ACCOUNT")
@@ -320,7 +268,6 @@ def upload_to_firestore(data: Dict) -> None:
         db = firestore.client()
         db.collection("settings").document("lectureHall").set(data)
         print("✅ Firestore (settings/lectureHall) へ書き込み完了")
-        sync_no_sound_events(db, data.get("noSound", {}))
     except (ValueError, json.JSONDecodeError) as e:
         print(f"❌ Firestore への書き込みに失敗: {e}")
         sys.exit(1)
