@@ -60,7 +60,9 @@ SCBOX_RE = re.compile(
     r'<div class="scBox" dana-id="(\d+)"[^>]*>(.*?)</div></div>', re.S
 )
 SCHEDULE_RE = re.compile(
-    r'<div class="scScheduleBox[^"]*" id="(\d+)" style="left:(\d+)px;width:(\d+)px;"'
+    # 音出し可の予約は style に background-color:#3333ff; が付くため、
+    # width の後の closing quote を直に要求せず、末尾の追加スタイルを許容する
+    r'<div class="scScheduleBox[^"]*" id="(\d+)" style="left:(\d+)px;width:(\d+)px;[^"]*"'
 )
 # 詳細ページ（rsvDetail.php）のラベル/値ペア
 DETAIL_ROW_RE = re.compile(

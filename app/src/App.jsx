@@ -6,7 +6,6 @@ import { CalendarView } from './features/calendar/CalendarView'
 import { BandBoard } from './features/bands/BandBoard'
 import { IntentBoard } from './features/intents/IntentBoard'
 import { JournalBoard } from './features/journal/JournalBoard'
-import { SOUND_OK_COLOR } from './features/lecture-hall/useLectureHall'
 import { TYPE_LABELS, TYPE_COLORS, EVENT_TYPES } from './lib/eventTypes'
 
 const TABS = [
@@ -24,10 +23,6 @@ function Legend() {
           {TYPE_LABELS[t]}
         </span>
       ))}
-      <span className="legend-item">
-        <span className="legend-color" style={{ background: SOUND_OK_COLOR }} />
-        音出し可能（講義棟）
-      </span>
     </div>
   )
 }
