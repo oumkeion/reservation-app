@@ -1,13 +1,15 @@
 // バンド掲示板: 現存バンドの一覧表示（枠の取りやすさを判断する材料）
 // ログイン不要。登録・解散とも代表者名の手入力で運用する（予約と同じ方式）。
 import { useEffect, useState } from 'react'
-import { subscribeActiveBands, createBand, disbandBand } from '../../models/bands'
+import { subscribeActiveBands, createBand, updateBand, disbandBand } from '../../models/bands'
 import { CreateBandDialog } from './CreateBandDialog'
+import { EditBandDialog } from './EditBandDialog'
 
 export function BandBoard() {
   const [bands, setBands] = useState([])
   const [error, setError] = useState(false)
   const [showCreate, setShowCreate] = useState(false)
+  const [editingBand, setEditingBand] = useState(null)
 
   useEffect(() => {
     const unsubscribe = subscribeActiveBands(setBands, () => setError(true))
@@ -56,14 +58,26 @@ export function BandBoard() {
               {band.genre && <span className="band-genre">{band.genre}</span>}
             </div>
             <div className="band-card-sub">代表: {band.representative || '不明'}</div>
-            <button className="band-disband" onClick={() => handleDisband(band)}>
-              解散
-            </button>
+            <div className="band-card-actions">
+              <button className="band-action" onClick={() => setEditingBand(band)}>
+                編集
+              </button>
+              <button className="band-action" onClick={() => handleDisband(band)}>
+                解散
+              </button>
+            </div>
           </li>
         ))}
       </ul>
       {showCreate && (
         <CreateBandDialog onSave={createBand} onClose={() => setShowCreate(false)} />
+      )}
+      {editingBand && (
+        <EditBandDialog
+          band={editingBand}
+          onSave={updateBand}
+          onClose={() => setEditingBand(null)}
+        />
       )}
     </div>
   )

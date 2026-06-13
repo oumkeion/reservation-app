@@ -156,10 +156,12 @@ def fetch_reservation_detail(session: requests.Session, rid: str) -> Dict:
     org = fields.get("使用講座", "")
     # "事務部 教務課教務係担当者：教務課教務係" のように担当者が連結されるため切り落とす
     org = org.split("担当者：")[0].strip() or "不明"
+    # 「可（注釈付き）」のような値も取りこぼさないよう前方一致で判定（「不可」は「不」始まり）
+    sound_value = (fields.get("課外活動の音出し") or "").strip()
     return {
         "org": org,
         "label": fields.get("使用内容（会議名称など）", ""),
-        "sound": "可" if fields.get("課外活動の音出し") == "可" else "不可",
+        "sound": "可" if sound_value.startswith("可") else "不可",
     }
 
 
@@ -220,6 +222,12 @@ def scrape_all() -> Dict:
     for slot in all_slots:
         detail = detail_cache[slot.pop("rid")]
         slot.update(detail)
+
+    # 観測用: 音出し可否の分布（「可」が常に0件の場合はパース不具合を疑う手がかりになる）
+    sound_counts: Dict[str, int] = {}
+    for s in all_slots:
+        sound_counts[s["sound"]] = sound_counts.get(s["sound"], 0) + 1
+    print(f"音出し可否の分布: {sound_counts}")
 
     # 音出し禁止帯: 「音出し不可」の予約がどこかの部屋に入っている時間帯（日毎の和集合）
     no_sound: Dict[str, List[Dict]] = {}

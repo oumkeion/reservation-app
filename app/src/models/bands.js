@@ -46,6 +46,10 @@ export async function createBand({ name, genre, representative }) {
   return ref.id
 }
 
+export async function updateBand(bandId, { name, genre }) {
+  await updateDoc(doc(db, 'bands', bandId), { name, genre })
+}
+
 export async function disbandBand(bandId) {
   await updateDoc(doc(db, 'bands', bandId), {
     status: BAND_STATUS.DISBANDED,

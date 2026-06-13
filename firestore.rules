@@ -56,16 +56,26 @@ service cloud.firestore {
     }
 
     // バンド（バンド掲示板）: ログイン不要（予約と同じ匿名運用）。
-    // 作成は自由。更新は「解散」（status: disbanded への変更のみ）に限定する。
+    // 作成は自由。更新は「名前・ジャンルの編集」か「解散」（status: disbanded への変更）のみ。
+    // 代表者名(representative)と作成日時は変更不可。
     match /bands/{bandId} {
       allow read: if true;
       allow create: if true;
-      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']) &&
-        request.resource.data.status == 'disbanded';
+      allow update: if
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'genre'])) ||
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']) &&
+         request.resource.data.status == 'disbanded');
     }
 
     // 狙い表明（15分グリッド）: 予約と同じくログイン不要・誰でも宣言・削除できる。
     match /slotIntents/{intentId} {
+      allow read: if true;
+      allow create: if true;
+      allow delete: if true;
+    }
+
+    // 部誌（つぶやき）: ログイン不要。削除はクライアント側の名前一致確認で運用（events と同方針）。
+    match /posts/{postId} {
       allow read: if true;
       allow create: if true;
       allow delete: if true;

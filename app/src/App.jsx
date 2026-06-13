@@ -1,17 +1,17 @@
 // アプリ全体のシェル: 上部にログインバー、タブで機能を切り替える
-// Phase 0: カレンダーのみ。バンド掲示板・狙い表明・掲示板は Phase 1 以降で実装。
 import { useState } from 'react'
 import { useAuth } from './features/auth/useAuth'
 import { AuthBar } from './features/auth/AuthBar'
 import { CalendarView } from './features/calendar/CalendarView'
 import { BandBoard } from './features/bands/BandBoard'
 import { IntentBoard } from './features/intents/IntentBoard'
+import { JournalBoard } from './features/journal/JournalBoard'
 import { TYPE_LABELS, TYPE_COLORS, EVENT_TYPES } from './lib/eventTypes'
 
 const TABS = [
   { id: 'calendar', label: '予約カレンダー' },
   { id: 'bands', label: 'バンド一覧' },
-  { id: 'board', label: '掲示板' },
+  { id: 'journal', label: '部誌' },
 ]
 
 function Legend() {
@@ -69,9 +69,7 @@ export default function App() {
             <IntentBoard />
           </>
         )}
-        {tab === 'board' && (
-          <p className="placeholder">掲示板は準備中です（Phase 2）。</p>
-        )}
+        {tab === 'journal' && <JournalBoard isAdmin={isAdmin} />}
       </main>
     </div>
   )
