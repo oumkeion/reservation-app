@@ -102,7 +102,15 @@ export function CalendarView({ profile, isAdmin }) {
       )}
       <FullCalendar
         plugins={[timeGridPlugin, dayGridPlugin, interactionPlugin]}
-        initialView="timeGridWeek"
+        initialView="timeGridRolling"
+        views={{
+          // 今日を左端にした7日間のローリング表示（日曜始まりの固定週ではない）
+          timeGridRolling: {
+            type: 'timeGrid',
+            duration: { days: 7 },
+            buttonText: '週',
+          },
+        }}
         locale="ja"
         height="auto"
         allDaySlot={false}
@@ -118,9 +126,9 @@ export function CalendarView({ profile, isAdmin }) {
         headerToolbar={{
           left: 'prev,next today',
           center: 'title',
-          right: 'timeGridWeek,timeGridDay,dayGridMonth',
+          right: 'timeGridRolling,timeGridDay,dayGridMonth',
         }}
-        buttonText={{ today: '今日', week: '週', day: '日', month: '月' }}
+        buttonText={{ today: '今日', day: '日', month: '月' }}
       />
       <section className="lecture-hall-section">
         <h2>講義棟予約カレンダー</h2>
