@@ -24,6 +24,7 @@ export function CalendarView({ profile, isAdmin }) {
     data: lhData,
     rooms: lhRooms,
     noSoundEvents,
+    soundOkEvents,
     updatedAt: lhUpdatedAt,
     isStale: lhStale,
     error: lhError,
@@ -81,8 +82,8 @@ export function CalendarView({ profile, isAdmin }) {
         e.extendedProps?.type === EVENT_TYPES.NO_SOUND ? { ...e, display: 'auto' } : e,
       )
     : calendarEvents
-  // 講義棟由来の音出し禁止帯（自動・常に最新）を灰色の背景として重ねる
-  const mergedEvents = [...clubEvents, ...noSoundEvents]
+  // 講義棟由来の音出し可能帯（緑）と禁止帯（灰）を背景として重ねる（自動・常に最新）
+  const mergedEvents = [...clubEvents, ...soundOkEvents, ...noSoundEvents]
 
   return (
     <div className="calendar-view">
