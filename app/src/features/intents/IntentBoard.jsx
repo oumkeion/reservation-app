@@ -9,9 +9,11 @@ import { useIntents } from './useIntents'
 import { IntentDialog } from './IntentDialog'
 import { IntentDetailDialog } from './IntentDetailDialog'
 import { addIntent, deleteIntent } from '../../models/intents'
+import { useLectureHall } from '../lecture-hall/useLectureHall'
 
 export function IntentBoard() {
   const { intents, calendarIntents, error } = useIntents()
+  const { noSoundEvents } = useLectureHall()
   const [selectedRange, setSelectedRange] = useState(null)
   const [selectedIntent, setSelectedIntent] = useState(null)
 
@@ -69,7 +71,7 @@ export function IntentBoard() {
         selectable
         selectMirror
         slotEventOverlap={false}
-        events={calendarIntents}
+        events={[...calendarIntents, ...noSoundEvents]}
         select={handleSelect}
         eventClick={handleEventClick}
         headerToolbar={{
