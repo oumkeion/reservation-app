@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react'
 import FullCalendar from '@fullcalendar/react'
 import timeGridPlugin from '@fullcalendar/timegrid'
+import dayGridPlugin from '@fullcalendar/daygrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import { useIntents } from './useIntents'
 import { IntentDialog } from './IntentDialog'
@@ -48,8 +49,16 @@ export function IntentBoard() {
         <p className="error-bar">狙い表明データの読み込みに失敗しました。再読み込みしてください。</p>
       )}
       <FullCalendar
-        plugins={[timeGridPlugin, interactionPlugin]}
-        initialView="timeGridWeek"
+        plugins={[timeGridPlugin, dayGridPlugin, interactionPlugin]}
+        initialView="timeGridRolling"
+        views={{
+          // 今日を左端にした7日間のローリング表示（メインカレンダーと同じ）
+          timeGridRolling: {
+            type: 'timeGrid',
+            duration: { days: 7 },
+            buttonText: '週',
+          },
+        }}
         locale="ja"
         height="auto"
         allDaySlot={false}
@@ -66,9 +75,9 @@ export function IntentBoard() {
         headerToolbar={{
           left: 'prev,next today',
           center: 'title',
-          right: 'timeGridWeek,timeGridDay',
+          right: 'timeGridRolling,timeGridDay,dayGridMonth',
         }}
-        buttonText={{ today: '今日', week: '週', day: '日' }}
+        buttonText={{ today: '今日', day: '日', month: '月' }}
       />
       {selectedRange && (
         <IntentDialog
