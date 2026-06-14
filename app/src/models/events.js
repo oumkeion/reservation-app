@@ -9,6 +9,7 @@ import {
   doc,
   onSnapshot,
   writeBatch,
+  getDoc,
   getDocs,
   query,
   where,
@@ -71,6 +72,30 @@ export async function updateEvent(event, changes, editorName) {
 export async function deleteEvent(event, deleterName) {
   await deleteDoc(doc(db, 'events', event.id))
   await addLog('削除', { editor: deleterName, before: summarize(event), after: null })
+}
+
+// ID指定で削除（固定枠申請の承認などで使用）。ログ用に内容を取得してから削除する。
+export async function deleteEventById(eventId, deleterName) {
+  const ref = doc(db, 'events', eventId)
+  const snap = await getDoc(ref)
+  const event = snap.exists() ? { id: eventId, ...snap.data() } : { id: eventId }
+  await deleteDoc(ref)
+  await addLog('削除', { editor: deleterName, before: summarize(event), after: null })
+}
+
+// ID指定で時間を変更（固定枠の変更申請の承認で使用）。
+export async function updateEventTime(eventId, start, end, editorName) {
+  const ref = doc(db, 'events', eventId)
+  const snap = await getDoc(ref)
+  const event = snap.exists() ? { id: eventId, ...snap.data() } : null
+  await updateDoc(ref, { start, end })
+  if (event) {
+    await addLog('編集', {
+      editor: editorName,
+      before: summarize(event),
+      after: summarize({ ...event, start, end }),
+    })
+  }
 }
 
 // 固定枠の繰り返し一括登録（管理者専用）。

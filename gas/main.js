@@ -192,8 +192,12 @@ function dailyReminder() {
 
 /** 初回セットアップ: エディタから1回実行してトリガーを設置する */
 function setupTriggers() {
+  var keep = ['dailyReminder', 'notifyFixedSlotRequests']
   ScriptApp.getProjectTriggers().forEach(function (t) {
-    if (t.getHandlerFunction() === 'dailyReminder') ScriptApp.deleteTrigger(t)
+    if (keep.indexOf(t.getHandlerFunction()) >= 0) ScriptApp.deleteTrigger(t)
   })
+  // 予約前日リマインド（毎日20時）
   ScriptApp.newTrigger('dailyReminder').timeBased().everyDays(1).atHour(20).create()
+  // 固定枠申請のメール通知（15分ごとに新規pendingをチェック）
+  ScriptApp.newTrigger('notifyFixedSlotRequests').timeBased().everyMinutes(15).create()
 }

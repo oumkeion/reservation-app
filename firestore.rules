@@ -83,5 +83,12 @@ service cloud.firestore {
       allow create: if true;
       allow delete: if true;
     }
+
+    // 固定枠 変更・キャンセル申請: 部員が申請（作成）、管理者のみ承認/拒否（更新・削除）。
+    match /fixedSlotRequests/{requestId} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if isAdmin();
+    }
   }
 }

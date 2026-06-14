@@ -281,6 +281,76 @@ button:disabled {
 }
 
 /* 部誌（つぶやきタイムライン） */
+/* 固定枠申請（管理者承認一覧） */
+.req-admin h2 {
+  font-size: 1.05rem;
+  margin: 0 0 8px;
+}
+
+.req-admin h3 {
+  font-size: 0.95rem;
+  margin: 16px 0 6px;
+}
+
+.req-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.req-item {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  background: #fff;
+}
+
+.req-item.req-pending {
+  border-left: 4px solid #f9a825;
+}
+
+.req-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.req-kind {
+  font-weight: bold;
+}
+
+.req-status {
+  font-size: 0.78rem;
+  color: #777;
+}
+
+.req-requester {
+  margin-left: auto;
+  font-size: 0.85rem;
+}
+
+.req-detail {
+  font-size: 0.85rem;
+  color: #444;
+}
+
+.req-resolved {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: #777;
+  margin-top: 6px;
+}
+
+.req-clear {
+  margin-left: auto;
+  font-size: 0.78rem;
+  padding: 2px 8px;
+}
+
 /* 管理者用ツールバー */
 .admin-toolbar {
   display: flex;

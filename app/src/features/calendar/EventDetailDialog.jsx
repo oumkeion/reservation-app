@@ -9,7 +9,10 @@ import {
   PROTECTED_TYPES,
   MEMBER_SELECTABLE_TYPES,
   ADMIN_SELECTABLE_TYPES,
+  EVENT_TYPES,
 } from '../../lib/eventTypes'
+import { FixedSlotRequestDialog } from './FixedSlotRequestDialog'
+import { createFixedSlotRequest } from '../../models/fixedSlotRequests'
 
 // ISO文字列 → datetime-local 用 "YYYY-MM-DDTHH:MM"（ローカル時刻）
 function toLocalInput(iso) {
@@ -34,7 +37,10 @@ export function EventDetailDialog({
   const canModify = isAdmin || !isProtected
 
   const [mode, setMode] = useState('view') // 'view' | 'edit'
+  const [showRequest, setShowRequest] = useState(false)
   const [busy, setBusy] = useState(false)
+  // 一般部員は固定枠を直接編集できないが、キャンセル・変更を申請できる
+  const canRequestFixed = !isAdmin && type === EVENT_TYPES.FIXED
   // 編集フォーム
   const [title, setTitle] = useState(event.title || '')
   const [editType, setEditType] = useState(type)
@@ -140,6 +146,16 @@ export function EventDetailDialog({
       minute: '2-digit',
     })
 
+  if (showRequest) {
+    return (
+      <FixedSlotRequestDialog
+        fixedEvent={event}
+        onSubmit={createFixedSlotRequest}
+        onClose={onClose}
+      />
+    )
+  }
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -155,6 +171,11 @@ export function EventDetailDialog({
             <p>コメント：{event.extendedProps?.comment || '（なし）'}</p>
             <div className="dialog-buttons">
               <button onClick={onClose}>閉じる</button>
+              {canRequestFixed && (
+                <button onClick={() => setShowRequest(true)} disabled={busy}>
+                  キャンセル・変更申請
+                </button>
+              )}
               {canModify && (
                 <button onClick={handleStartEdit} disabled={busy}>
                   編集

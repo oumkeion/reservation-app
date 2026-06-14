@@ -7,6 +7,7 @@ import { BandBoard } from './features/bands/BandBoard'
 import { IntentBoard } from './features/intents/IntentBoard'
 import { JournalBoard } from './features/journal/JournalBoard'
 import { LogView } from './features/logs/LogView'
+import { FixedSlotRequestsAdmin } from './features/admin/FixedSlotRequestsAdmin'
 import { TYPE_LABELS, TYPE_COLORS, EVENT_TYPES } from './lib/eventTypes'
 
 const TABS = [
@@ -15,6 +16,9 @@ const TABS = [
   { id: 'journal', label: '部誌' },
   { id: 'logs', label: '操作ログ' },
 ]
+
+// 管理者だけに表示するタブ
+const ADMIN_TABS = [{ id: 'requests', label: '固定枠申請' }]
 
 function Legend() {
   return (
@@ -47,7 +51,7 @@ export default function App() {
       </header>
 
       <nav className="tabs">
-        {TABS.map((t) => (
+        {[...TABS, ...(isAdmin ? ADMIN_TABS : [])].map((t) => (
           <button
             key={t.id}
             className={tab === t.id ? 'tab active' : 'tab'}
@@ -73,6 +77,9 @@ export default function App() {
         )}
         {tab === 'journal' && <JournalBoard isAdmin={isAdmin} />}
         {tab === 'logs' && <LogView />}
+        {tab === 'requests' && isAdmin && (
+          <FixedSlotRequestsAdmin adminName={profile?.displayName || profile?.email} />
+        )}
       </main>
     </div>
   )
