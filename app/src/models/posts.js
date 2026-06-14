@@ -12,6 +12,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore'
 import { db } from '../lib/firebase'
+import { logActivity } from './activityLog'
 
 export const POST_MAX_LENGTH = 300
 
@@ -39,9 +40,11 @@ export async function createPost({ body, author }) {
     createdAt: serverTimestamp(),
   }
   const ref = await addDoc(collection(db, 'posts'), post)
+  await logActivity('部誌投稿', author, body.length > 30 ? `${body.slice(0, 30)}…` : body)
   return ref.id
 }
 
-export async function deletePost(postId) {
-  await deleteDoc(doc(db, 'posts', postId))
+export async function deletePost(post) {
+  await deleteDoc(doc(db, 'posts', post.id))
+  await logActivity('部誌削除', post.author || '不明', '投稿を削除')
 }

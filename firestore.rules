@@ -12,7 +12,7 @@ service cloud.firestore {
     }
 
     function isProtectedType(data) {
-      return data.extendedProps.type in ['fixed', 'no-sound'];
+      return data.extendedProps.type in ['fixed', 'no-sound', 'club-event'];
     }
 
     match /events/{eventId} {
@@ -25,7 +25,8 @@ service cloud.firestore {
 
     match /admins/{adminId} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.token.admin == true;
+      // 既存の管理者のみが管理者を追加・削除できる（初回はConsoleから手動追加）
+      allow write: if isAdmin();
     }
 
     // 操作ログ: 全部員が閲覧可能（仕様）。作成は自由、改ざん防止のため更新・削除は不可。
@@ -37,12 +38,12 @@ service cloud.firestore {
 
     match /dailyMemos/{memoId} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.token.admin == true;
+      allow write: if isAdmin();
     }
 
     match /settings/notice {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.token.admin == true;
+      allow write: if isAdmin();
     }
 
     // 講義棟空き状況（GitHub Actions が Admin SDK で書き込む。クライアントは読み取りのみ）

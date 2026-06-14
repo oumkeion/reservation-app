@@ -12,6 +12,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore'
 import { db } from '../lib/firebase'
+import { logActivity } from './activityLog'
 
 export const BAND_STATUS = {
   ACTIVE: 'active',
@@ -43,15 +44,18 @@ export async function createBand({ name, genre, representative }) {
     createdAt: serverTimestamp(),
   }
   const ref = await addDoc(collection(db, 'bands'), band)
+  await logActivity('バンド登録', representative, `バンド「${name}」`)
   return ref.id
 }
 
 export async function updateBand(bandId, { name, genre }) {
   await updateDoc(doc(db, 'bands', bandId), { name, genre })
+  await logActivity('バンド編集', name, `バンド「${name}」の情報を更新`)
 }
 
-export async function disbandBand(bandId) {
+export async function disbandBand(bandId, band) {
   await updateDoc(doc(db, 'bands', bandId), {
     status: BAND_STATUS.DISBANDED,
   })
+  await logActivity('バンド解散', band?.representative || '不明', `バンド「${band?.name || bandId}」を解散`)
 }

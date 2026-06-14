@@ -12,7 +12,7 @@ import { validateReservation } from './validation'
 import { ReserveDialog } from './ReserveDialog'
 import { ValidationFailure } from './errors'
 import { EventDetailDialog } from './EventDetailDialog'
-import { addEvent, deleteEvent } from '../../models/events'
+import { addEvent, deleteEvent, updateEvent } from '../../models/events'
 import { EVENT_TYPES } from '../../lib/eventTypes'
 import { useLectureHall } from '../lecture-hall/useLectureHall'
 import { LectureHallBoard } from '../lecture-hall/LectureHallBoard'
@@ -73,6 +73,9 @@ export function CalendarView({ profile, isAdmin }) {
   }
 
   const handleDelete = (event, deleterName) => deleteEvent(event, deleterName)
+
+  const handleUpdate = (event, changes, editorName) =>
+    updateEvent(event, changes, editorName)
 
   // 音出し禁止（手動作成分）は通常は背景表示（クリック不可）だが、管理者には通常イベント
   // として表示してクリック→削除できるようにする（FullCalendarの背景イベントはクリック不可のため）
@@ -153,6 +156,7 @@ export function CalendarView({ profile, isAdmin }) {
           isAdmin={isAdmin}
           adminName={profile?.displayName || profile?.email}
           onDelete={handleDelete}
+          onUpdate={handleUpdate}
           onClose={() => setSelectedEvent(null)}
         />
       )}

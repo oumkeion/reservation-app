@@ -5,6 +5,7 @@ import { useState } from 'react'
 import {
   TYPE_LABELS,
   MEMBER_SELECTABLE_TYPES,
+  ADMIN_SELECTABLE_TYPES,
   EVENT_TYPES,
 } from '../../lib/eventTypes'
 import { ValidationFailure } from './errors'
@@ -17,7 +18,7 @@ export function ReserveDialog({ range, isAdmin, onSave, onClose }) {
   const [saving, setSaving] = useState(false)
 
   const selectableTypes = isAdmin
-    ? [...MEMBER_SELECTABLE_TYPES, EVENT_TYPES.FIXED, EVENT_TYPES.NO_SOUND]
+    ? [...MEMBER_SELECTABLE_TYPES, ...ADMIN_SELECTABLE_TYPES]
     : MEMBER_SELECTABLE_TYPES
 
   const handleSave = async () => {

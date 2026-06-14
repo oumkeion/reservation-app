@@ -68,7 +68,7 @@ export function JournalBoard({ isAdmin }) {
     }
     if (!confirm('この投稿を削除しますか？')) return
     try {
-      await deletePost(post.id)
+      await deletePost(post)
     } catch (err) {
       console.error('削除に失敗:', err)
       alert('削除に失敗しました。')

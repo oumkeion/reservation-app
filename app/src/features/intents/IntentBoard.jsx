@@ -39,7 +39,7 @@ export function IntentBoard() {
     })
   }
 
-  const handleDelete = (intent) => deleteIntent(intent.id)
+  const handleDelete = (intent) => deleteIntent(intent)
 
   return (
     <div className="intent-board">

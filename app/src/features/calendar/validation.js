@@ -2,16 +2,28 @@
 // 戻り値: エラーメッセージ文字列 / 問題なければ null
 //
 // 予約はログイン不要なので、確定枠の週1制限は「記入者名」の一致で判定する（旧アプリと同じ）。
-import { EVENT_TYPES } from '../../lib/eventTypes'
+import { EVENT_TYPES, PROTECTED_TYPES } from '../../lib/eventTypes'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
+// 端末のタイムゾーンに依存せず JST の {dateStr:"YYYY-MM-DD", hour:0-23} を返す
+function jstParts(date) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Tokyo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    hour12: false,
+  }).formatToParts(date)
+  const get = (t) => parts.find((p) => p.type === t)?.value
+  return { dateStr: `${get('year')}-${get('month')}-${get('day')}`, hour: Number(get('hour')) }
+}
+
 export function validateReservation({ type, editor, start, now, isAdmin, allEvents }) {
-  if (type === EVENT_TYPES.FIXED && !isAdmin) {
-    return '固定枠は管理者のみ予約できます。'
-  }
-  if (type === EVENT_TYPES.NO_SOUND && !isAdmin) {
-    return '音出し禁止時間は管理者のみ設定できます。'
+  // 保護枠（固定枠・音出し禁止・部のイベント）は管理者のみ
+  if (PROTECTED_TYPES.includes(type) && !isAdmin) {
+    return 'この種別は管理者のみ設定できます。'
   }
 
   if (type === EVENT_TYPES.CONFIRMED) {
@@ -34,12 +46,14 @@ export function validateReservation({ type, editor, start, now, isAdmin, allEven
   }
 
   if (type === EVENT_TYPES.REQUEST) {
-    // 使用日のちょうど1週間前の日の 0:00〜9:00 のみ予約操作できる
+    // 使用日のちょうど1週間前の日の 0:00〜9:00（JST）のみ予約操作できる
     const oneWeekBefore = new Date(start.getTime() - 7 * DAY_MS)
-    const isSameDate = now.toDateString() === oneWeekBefore.toDateString()
-    const isBetweenMidnightAnd9AM = now.getHours() >= 0 && now.getHours() < 9
+    const nowJst = jstParts(now)
+    const targetJst = jstParts(oneWeekBefore)
+    const isSameDate = nowJst.dateStr === targetJst.dateStr
+    const isBetweenMidnightAnd9AM = nowJst.hour >= 0 && nowJst.hour < 9
     if (!(isSameDate && isBetweenMidnightAnd9AM)) {
-      return '希望枠は使用日の1週間前、0:00〜9:00の間のみ予約可能です。'
+      return '希望枠は使用日の1週間前、0:00〜9:00（日本時間）の間のみ予約可能です。'
     }
   }
 

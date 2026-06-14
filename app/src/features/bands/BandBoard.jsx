@@ -27,7 +27,7 @@ export function BandBoard() {
       return
     }
     try {
-      await disbandBand(band.id)
+      await disbandBand(band.id, band)
     } catch (err) {
       console.error('解散処理に失敗:', err)
       alert('解散処理に失敗しました。')

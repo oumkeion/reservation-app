@@ -8,6 +8,7 @@ import {
   onSnapshot,
 } from 'firebase/firestore'
 import { db } from '../lib/firebase'
+import { logActivity } from './activityLog'
 
 // slotIntents をリアルタイム購読し、FullCalendar 形式の配列でコールバックに渡す
 export function subscribeIntents(onChange, onError) {
@@ -30,9 +31,12 @@ export async function addIntent({ title, editor, start, end, comment }) {
     extendedProps: { editor, comment },
   }
   const ref = await addDoc(collection(db, 'slotIntents'), intent)
+  await logActivity('狙い表明', editor, `バンド「${title}」`)
   return ref.id
 }
 
-export async function deleteIntent(intentId) {
-  await deleteDoc(doc(db, 'slotIntents', intentId))
+export async function deleteIntent(intent) {
+  const id = typeof intent === 'string' ? intent : intent.id
+  await deleteDoc(doc(db, 'slotIntents', id))
+  await logActivity('狙い表明取消', intent?.extendedProps?.editor || '不明', `バンド「${intent?.title || id}」`)
 }
