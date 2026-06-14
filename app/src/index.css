@@ -281,6 +281,14 @@ button:disabled {
 }
 
 /* 部誌（つぶやきタイムライン） */
+/* 管理者用ツールバー */
+.admin-toolbar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
 /* 操作ログ */
 .log-view h2 {
   font-size: 1.05rem;

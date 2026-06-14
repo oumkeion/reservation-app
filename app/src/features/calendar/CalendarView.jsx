@@ -12,8 +12,15 @@ import { validateReservation } from './validation'
 import { ReserveDialog } from './ReserveDialog'
 import { ValidationFailure } from './errors'
 import { EventDetailDialog } from './EventDetailDialog'
-import { addEvent, deleteEvent, updateEvent } from '../../models/events'
+import {
+  addEvent,
+  deleteEvent,
+  updateEvent,
+  addRecurringFixedSlots,
+  deleteRecurrenceGroup,
+} from '../../models/events'
 import { EVENT_TYPES } from '../../lib/eventTypes'
+import { FixedSlotBulkDialog } from './FixedSlotBulkDialog'
 import { useLectureHall } from '../lecture-hall/useLectureHall'
 import { LectureHallBoard } from '../lecture-hall/LectureHallBoard'
 import { LectureHallDetailDialog } from '../lecture-hall/LectureHallDetailDialog'
@@ -31,6 +38,7 @@ export function CalendarView({ profile, isAdmin }) {
   const [selectedRange, setSelectedRange] = useState(null)
   const [selectedEvent, setSelectedEvent] = useState(null)
   const [selectedLhEvent, setSelectedLhEvent] = useState(null)
+  const [showBulkFixed, setShowBulkFixed] = useState(false)
 
   // ドラッグ選択 → 予約ダイアログを開く（ログイン不要）
   const handleSelect = useCallback((info) => {
@@ -103,6 +111,11 @@ export function CalendarView({ profile, isAdmin }) {
           講義棟データの読み込みに失敗したため、音出し禁止帯が表示されていません。
         </p>
       )}
+      {isAdmin && (
+        <div className="admin-toolbar">
+          <button onClick={() => setShowBulkFixed(true)}>固定枠を一括登録</button>
+        </div>
+      )}
       <FullCalendar
         plugins={[timeGridPlugin, dayGridPlugin, interactionPlugin]}
         initialView="timeGridRolling"
@@ -157,6 +170,9 @@ export function CalendarView({ profile, isAdmin }) {
           adminName={profile?.displayName || profile?.email}
           onDelete={handleDelete}
           onUpdate={handleUpdate}
+          onDeleteGroup={(group) =>
+            deleteRecurrenceGroup(group, profile?.displayName || profile?.email || '管理者')
+          }
           onClose={() => setSelectedEvent(null)}
         />
       )}
@@ -164,6 +180,13 @@ export function CalendarView({ profile, isAdmin }) {
         <LectureHallDetailDialog
           event={selectedLhEvent}
           onClose={() => setSelectedLhEvent(null)}
+        />
+      )}
+      {showBulkFixed && (
+        <FixedSlotBulkDialog
+          adminName={profile?.displayName || profile?.email}
+          onSave={addRecurringFixedSlots}
+          onClose={() => setShowBulkFixed(false)}
         />
       )}
     </div>
