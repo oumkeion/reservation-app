@@ -5,6 +5,7 @@ import {
   collection,
   addDoc,
   deleteDoc,
+  updateDoc,
   doc,
   onSnapshot,
 } from 'firebase/firestore'
@@ -31,29 +32,61 @@ export async function addEvent({ title, start, end, type, comment, editor }) {
     extendedProps: { type, comment, editor },
   }
   const ref = await addDoc(collection(db, 'events'), event)
-  await addLog('予約追加', { id: ref.id, ...event }, editor)
+  await addLog('予約追加', { editor, before: null, after: summarize({ id: ref.id, ...event }) })
   return ref.id
+}
+
+// 予約の編集（時間移動・内容変更）。before/after を両方ログに残す。
+export async function updateEvent(event, changes, editorName) {
+  const before = summarize(event)
+  const next = {
+    title: changes.title ?? event.title,
+    start: changes.start ?? event.start,
+    end: changes.end ?? event.end,
+    extendedProps: {
+      type: changes.type ?? event.extendedProps?.type,
+      comment: changes.comment ?? event.extendedProps?.comment ?? '',
+      editor: changes.editor ?? event.extendedProps?.editor ?? '',
+    },
+  }
+  await updateDoc(doc(db, 'events', event.id), next)
+  await addLog('編集', {
+    editor: editorName,
+    before,
+    after: summarize({ id: event.id, ...next }),
+  })
 }
 
 export async function deleteEvent(event, deleterName) {
   await deleteDoc(doc(db, 'events', event.id))
-  await addLog('削除', event, deleterName)
+  await addLog('削除', { editor: deleterName, before: summarize(event), after: null })
 }
 
-// 操作ログ（旧アプリと同じ logs コレクション）
-async function addLog(action, eventObject, editorName) {
+// 予約イベント → ログ用の要約（バンド名・種別・コメント・日時）
+function summarize(event) {
+  if (!event) return null
+  return {
+    id: event.id || null,
+    title: event.title || '',
+    type: event.extendedProps?.type || '',
+    comment: event.extendedProps?.comment || '',
+    start: event.start || null,
+    end: event.end || null,
+  }
+}
+
+// 操作ログ（logs コレクション）。createdAt(ISO)で並び替え可能、timestampは表示用。
+async function addLog(action, { editor, before, after }) {
   try {
     await addDoc(collection(db, 'logs'), {
+      createdAt: new Date().toISOString(),
       timestamp: new Date().toLocaleString('ja-JP'),
       action,
-      editor: editorName || '不明',
-      event: {
-        id: eventObject.id || null,
-        title: eventObject.title || '',
-        start: eventObject.start || null,
-        end: eventObject.end || null,
-        type: eventObject.extendedProps?.type || '',
-      },
+      editor: editor || '不明',
+      before: before || null,
+      after: after || null,
+      // 旧ビューア互換のため主対象の要約も残す
+      event: after || before || null,
     })
   } catch (err) {
     // ログ失敗は予約自体の成否に影響させない

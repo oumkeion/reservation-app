@@ -6,12 +6,14 @@ import { CalendarView } from './features/calendar/CalendarView'
 import { BandBoard } from './features/bands/BandBoard'
 import { IntentBoard } from './features/intents/IntentBoard'
 import { JournalBoard } from './features/journal/JournalBoard'
+import { LogView } from './features/logs/LogView'
 import { TYPE_LABELS, TYPE_COLORS, EVENT_TYPES } from './lib/eventTypes'
 
 const TABS = [
   { id: 'calendar', label: '予約カレンダー' },
   { id: 'bands', label: 'バンド一覧' },
   { id: 'journal', label: '部誌' },
+  { id: 'logs', label: '操作ログ' },
 ]
 
 function Legend() {
@@ -70,6 +72,7 @@ export default function App() {
           </>
         )}
         {tab === 'journal' && <JournalBoard isAdmin={isAdmin} />}
+        {tab === 'logs' && <LogView />}
       </main>
     </div>
   )

@@ -281,6 +281,80 @@ button:disabled {
 }
 
 /* 部誌（つぶやきタイムライン） */
+/* 操作ログ */
+.log-view h2 {
+  font-size: 1.05rem;
+  margin: 0 0 4px;
+}
+
+.log-hint {
+  font-size: 0.85rem;
+  color: #777;
+  margin: 0 0 12px;
+}
+
+.log-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.log-item {
+  border: 1px solid #eee;
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  background: #fff;
+}
+
+.log-item-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+}
+
+.log-action {
+  font-weight: bold;
+  border-radius: 4px;
+  padding: 1px 8px;
+  color: #fff;
+  font-size: 0.78rem;
+}
+
+.log-action.log-add {
+  background: #2e7d32;
+}
+
+.log-action.log-edit {
+  background: #1976d2;
+}
+
+.log-action.log-delete {
+  background: #d32f2f;
+}
+
+.log-editor {
+  font-weight: bold;
+}
+
+.log-time {
+  margin-left: auto;
+  color: #999;
+  font-size: 0.78rem;
+}
+
+.log-detail {
+  font-size: 0.85rem;
+  color: #444;
+  margin-top: 4px;
+}
+
+.log-comment {
+  color: #777;
+  font-size: 0.8rem;
+}
+
 .journal h2 {
   font-size: 1.05rem;
   margin: 0 0 8px;
