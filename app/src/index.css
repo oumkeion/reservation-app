@@ -248,10 +248,41 @@ button:disabled {
   padding: 1px 8px;
 }
 
+.band-perf {
+  font-size: 0.8rem;
+  color: #c2185b;
+  background: #fce4ec;
+  border-radius: 10px;
+  padding: 1px 8px;
+}
+
+.band-songs {
+  font-size: 0.85rem;
+  color: #444;
+  margin: 4px 0 0;
+  white-space: pre-wrap;
+}
+
 .band-card-sub {
   font-size: 0.85rem;
   color: #555;
   margin: 4px 0 8px;
+}
+
+.dialog-note {
+  font-size: 0.8rem;
+  color: #666;
+  margin: 2px 0 6px;
+}
+
+.modal-content textarea {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  resize: vertical;
 }
 
 .band-card-actions {

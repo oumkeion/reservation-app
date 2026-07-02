@@ -1,7 +1,13 @@
 // バンド掲示板: 現存バンドの一覧表示（枠の取りやすさを判断する材料）
 // ログイン不要。登録・解散とも代表者名の手入力で運用する（予約と同じ方式）。
 import { useEffect, useState } from 'react'
-import { subscribeActiveBands, createBand, updateBand, disbandBand } from '../../models/bands'
+import {
+  subscribeActiveBands,
+  createBand,
+  updateBand,
+  disbandBand,
+  cleanupExpiredBands,
+} from '../../models/bands'
 import { CreateBandDialog } from './CreateBandDialog'
 import { EditBandDialog } from './EditBandDialog'
 
@@ -12,6 +18,8 @@ export function BandBoard() {
   const [editingBand, setEditingBand] = useState(null)
 
   useEffect(() => {
+    // 本番日を過ぎたバンドを自動削除してから購読する
+    cleanupExpiredBands()
     const unsubscribe = subscribeActiveBands(setBands, () => setError(true))
     return unsubscribe
   }, [])
@@ -55,8 +63,11 @@ export function BandBoard() {
           <li key={band.id} className="band-card">
             <div className="band-card-main">
               <span className="band-name">{band.name}</span>
-              {band.genre && <span className="band-genre">{band.genre}</span>}
+              {band.performanceDate && (
+                <span className="band-perf">🎤 本番 {band.performanceDate}</span>
+              )}
             </div>
+            {band.songs && <div className="band-songs">演奏曲: {band.songs}</div>}
             <div className="band-card-sub">代表: {band.representative || '不明'}</div>
             <div className="band-card-actions">
               <button className="band-action" onClick={() => setEditingBand(band)}>

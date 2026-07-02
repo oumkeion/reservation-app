@@ -3,7 +3,8 @@ import { useState } from 'react'
 
 export function CreateBandDialog({ onSave, onClose }) {
   const [name, setName] = useState('')
-  const [genre, setGenre] = useState('')
+  const [songs, setSongs] = useState('')
+  const [performanceDate, setPerformanceDate] = useState('')
   const [representative, setRepresentative] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -16,7 +17,8 @@ export function CreateBandDialog({ onSave, onClose }) {
     try {
       await onSave({
         name: name.trim(),
-        genre: genre.trim(),
+        songs: songs.trim(),
+        performanceDate,
         representative: representative.trim(),
       })
       onClose()
@@ -43,21 +45,30 @@ export function CreateBandDialog({ onSave, onClose }) {
           />
         </label>
         <label>
-          ジャンル
-          <input
-            type="text"
-            value={genre}
-            onChange={(e) => setGenre(e.target.value)}
-            placeholder="例: ロック、ポップス"
+          演奏する曲（任意）
+          <textarea
+            value={songs}
+            onChange={(e) => setSongs(e.target.value)}
+            placeholder="例: 曲名A / 曲名B（自由記入）"
+            rows={3}
           />
         </label>
+        <label>
+          ライブ本番日（任意）
+          <input
+            type="date"
+            value={performanceDate}
+            onChange={(e) => setPerformanceDate(e.target.value)}
+          />
+        </label>
+        <p className="dialog-note">本番日を過ぎると自動で一覧から削除されます（延期時は編集で変更）。</p>
         <label>
           代表者名（必須）
           <input
             type="text"
             value={representative}
             onChange={(e) => setRepresentative(e.target.value)}
-            placeholder="（必須・解散時の本人確認に使用）"
+            placeholder="（必須・編集/解散時の本人確認に使用）"
           />
         </label>
         <div className="dialog-buttons">

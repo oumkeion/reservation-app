@@ -3,7 +3,8 @@ import { useState } from 'react'
 
 export function EditBandDialog({ band, onSave, onClose }) {
   const [name, setName] = useState(band.name)
-  const [genre, setGenre] = useState(band.genre || '')
+  const [songs, setSongs] = useState(band.songs || '')
+  const [performanceDate, setPerformanceDate] = useState(band.performanceDate || '')
   const [saving, setSaving] = useState(false)
 
   const handleSave = async () => {
@@ -21,7 +22,11 @@ export function EditBandDialog({ band, onSave, onClose }) {
     }
     setSaving(true)
     try {
-      await onSave(band.id, { name: name.trim(), genre: genre.trim() })
+      await onSave(band.id, {
+        name: name.trim(),
+        songs: songs.trim(),
+        performanceDate,
+      })
       onClose()
     } catch (err) {
       console.error('バンド情報の更新に失敗:', err)
@@ -45,14 +50,23 @@ export function EditBandDialog({ band, onSave, onClose }) {
           />
         </label>
         <label>
-          ジャンル
-          <input
-            type="text"
-            value={genre}
-            onChange={(e) => setGenre(e.target.value)}
-            placeholder="例: ロック、ポップス"
+          演奏する曲（任意）
+          <textarea
+            value={songs}
+            onChange={(e) => setSongs(e.target.value)}
+            placeholder="例: 曲名A / 曲名B（自由記入）"
+            rows={3}
           />
         </label>
+        <label>
+          ライブ本番日（任意）
+          <input
+            type="date"
+            value={performanceDate}
+            onChange={(e) => setPerformanceDate(e.target.value)}
+          />
+        </label>
+        <p className="dialog-note">本番が延期になった場合はここで日付を変更してください。</p>
         <div className="dialog-buttons">
           <button onClick={onClose}>キャンセル</button>
           <button className="primary" onClick={handleSave} disabled={saving || !name.trim()}>

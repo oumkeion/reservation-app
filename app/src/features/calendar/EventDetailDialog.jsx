@@ -13,6 +13,7 @@ import {
 } from '../../lib/eventTypes'
 import { FixedSlotRequestDialog } from './FixedSlotRequestDialog'
 import { createFixedSlotRequest } from '../../models/fixedSlotRequests'
+import { SlotConflictError } from '../../models/events'
 
 // ISO文字列 → datetime-local 用 "YYYY-MM-DDTHH:MM"（ローカル時刻）
 function toLocalInput(iso) {
@@ -99,7 +100,7 @@ export function EventDetailDialog({
       onClose()
     } catch (err) {
       console.error('編集に失敗:', err)
-      alert('編集に失敗しました。')
+      alert(err instanceof SlotConflictError ? err.message : '編集に失敗しました。')
     } finally {
       setBusy(false)
     }

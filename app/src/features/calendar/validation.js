@@ -3,8 +3,30 @@
 //
 // 予約はログイン不要なので、確定枠の週1制限は「記入者名」の一致で判定する（旧アプリと同じ）。
 import { EVENT_TYPES, PROTECTED_TYPES } from '../../lib/eventTypes'
+import { isLockingType } from '../../models/slotLocks'
 
 const DAY_MS = 24 * 60 * 60 * 1000
+
+// start/end 文字列を絶対時刻(ms)に変換（ISO UTC はそのまま、naive は JST 壁時計）
+function toMs(s) {
+  if (s instanceof Date) return s.getTime()
+  if (typeof s !== 'string') return new Date(s).getTime()
+  return (s.endsWith('Z') ? new Date(s) : new Date(`${s}+09:00`)).getTime()
+}
+
+// 排他対象（部屋を占有する型）どうしの時間重複を検出し、先約イベントを返す。
+// 希望枠(request)・音出し禁止(no-sound)は占有しないので対象外。
+function findOverlap({ type, start, end, allEvents }) {
+  if (!isLockingType(type)) return null
+  const newStart = toMs(start)
+  const newEnd = toMs(end)
+  return allEvents.find((e) => {
+    if (!isLockingType(e.extendedProps?.type)) return false
+    const es = toMs(e.start)
+    const ee = toMs(e.end)
+    return es < newEnd && newStart < ee
+  })
+}
 
 // 端末のタイムゾーンに依存せず JST の {dateStr:"YYYY-MM-DD", hour:0-23} を返す
 function jstParts(date) {
@@ -20,10 +42,16 @@ function jstParts(date) {
   return { dateStr: `${get('year')}-${get('month')}-${get('day')}`, hour: Number(get('hour')) }
 }
 
-export function validateReservation({ type, editor, start, now, isAdmin, allEvents }) {
+export function validateReservation({ type, editor, start, end, now, isAdmin, allEvents }) {
   // 保護枠（固定枠・音出し禁止・部のイベント）は管理者のみ
   if (PROTECTED_TYPES.includes(type) && !isAdmin) {
     return 'この種別は管理者のみ設定できます。'
+  }
+
+  // 二重予約チェック（希望枠以外）。先約がある時間帯は選べない（早い者勝ち）。
+  const overlap = findOverlap({ type, start, end, allEvents })
+  if (overlap) {
+    return `その時間帯はすでに予約されています（先約: ${overlap.title || '不明'}）。空いている時間を選んでください。`
   }
 
   if (type === EVENT_TYPES.CONFIRMED) {

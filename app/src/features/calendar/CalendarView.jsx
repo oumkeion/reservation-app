@@ -2,7 +2,7 @@
 // 15分単位ドラッグ選択 → 予約ダイアログ / クリック → 詳細・削除
 // 予約はログイン不要。Googleログインは管理者操作（固定枠・音出し禁止の予約、確認なし削除）にのみ使う。
 // 講義棟の予約状況（夜間スクレイピング）も同じカレンダーに重ねて表示する（表示専用・切替可）。
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import FullCalendar from '@fullcalendar/react'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import dayGridPlugin from '@fullcalendar/daygrid'
@@ -18,15 +18,24 @@ import {
   updateEvent,
   addRecurringFixedSlots,
   deleteRecurrenceGroup,
+  cleanupOldEvents,
+  SlotConflictError,
 } from '../../models/events'
 import { EVENT_TYPES } from '../../lib/eventTypes'
 import { FixedSlotBulkDialog } from './FixedSlotBulkDialog'
+import { useActiveBands } from '../bands/useActiveBands'
 import { useLectureHall } from '../lecture-hall/useLectureHall'
 import { LectureHallBoard } from '../lecture-hall/LectureHallBoard'
 import { LectureHallDetailDialog } from '../lecture-hall/LectureHallDetailDialog'
 
 export function CalendarView({ profile, isAdmin }) {
   const { events, calendarEvents, error } = useEvents()
+  const bands = useActiveBands()
+
+  // 起動時に一度だけ、60日より前の古い予約を掃除する（best-effort）
+  useEffect(() => {
+    cleanupOldEvents()
+  }, [])
   const {
     data: lhData,
     rooms: lhRooms,
@@ -62,6 +71,7 @@ export function CalendarView({ profile, isAdmin }) {
       type,
       editor,
       start: selectedRange.start,
+      end: selectedRange.end,
       now: new Date(),
       isAdmin,
       allEvents: events,
@@ -70,14 +80,23 @@ export function CalendarView({ profile, isAdmin }) {
       alert(validationError)
       throw new ValidationFailure(validationError)
     }
-    await addEvent({
-      title,
-      start: selectedRange.start.toISOString(),
-      end: selectedRange.end.toISOString(),
-      type,
-      comment,
-      editor,
-    })
+    try {
+      await addEvent({
+        title,
+        start: selectedRange.start.toISOString(),
+        end: selectedRange.end.toISOString(),
+        type,
+        comment,
+        editor,
+      })
+    } catch (err) {
+      if (err instanceof SlotConflictError) {
+        // 事前チェックをすり抜けた同時予約の競合（原子的バックストップ）
+        alert(err.message)
+        throw new ValidationFailure(err.message)
+      }
+      throw err
+    }
   }
 
   const handleDelete = (event, deleterName) => deleteEvent(event, deleterName)
@@ -159,6 +178,7 @@ export function CalendarView({ profile, isAdmin }) {
         <ReserveDialog
           range={selectedRange}
           isAdmin={isAdmin}
+          bands={bands}
           onSave={handleSave}
           onClose={() => setSelectedRange(null)}
         />
@@ -185,6 +205,7 @@ export function CalendarView({ profile, isAdmin }) {
       {showBulkFixed && (
         <FixedSlotBulkDialog
           adminName={profile?.displayName || profile?.email}
+          bands={bands}
           onSave={addRecurringFixedSlots}
           onClose={() => setShowBulkFixed(false)}
         />

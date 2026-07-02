@@ -18,7 +18,7 @@ function todayStr() {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
 
-export function FixedSlotBulkDialog({ adminName, onSave, onClose }) {
+export function FixedSlotBulkDialog({ adminName, bands = [], onSave, onClose }) {
   const [title, setTitle] = useState('')
   const [weekday, setWeekday] = useState(1)
   const [startTime, setStartTime] = useState('18:00')
@@ -43,7 +43,7 @@ export function FixedSlotBulkDialog({ adminName, onSave, onClose }) {
     }
     setSaving(true)
     try {
-      const count = await onSave({
+      const { created, skipped } = await onSave({
         title: title.trim(),
         weekday: Number(weekday),
         startTime,
@@ -53,11 +53,14 @@ export function FixedSlotBulkDialog({ adminName, onSave, onClose }) {
         comment: comment.trim(),
         editor: adminName || '管理者',
       })
-      if (count === 0) {
+      if (created === 0 && skipped === 0) {
         alert('指定した期間に該当する曜日がありませんでした。')
         return
       }
-      alert(`${count}件の固定枠を登録しました。`)
+      alert(
+        `${created}件の固定枠を登録しました。` +
+          (skipped ? `\n${skipped}件は既存の予約と重複していたためスキップしました。` : ''),
+      )
       onClose()
     } catch (err) {
       console.error('固定枠の一括登録に失敗:', err)
@@ -72,8 +75,20 @@ export function FixedSlotBulkDialog({ adminName, onSave, onClose }) {
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <h3>固定枠の一括登録（管理者）</h3>
         <label>
-          バンド名（必須）
-          <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus />
+          バンド名（必須・一覧から選択、または自由入力）
+          <input
+            type="text"
+            list="fixed-band-list"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="一覧から選択、またはメンテ等を自由入力"
+            autoFocus
+          />
+          <datalist id="fixed-band-list">
+            {bands.map((b) => (
+              <option key={b.id} value={b.name} />
+            ))}
+          </datalist>
         </label>
         <label>
           曜日

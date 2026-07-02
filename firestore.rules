@@ -74,6 +74,11 @@ service cloud.firestore {
         && after.extendedProps.type == before.extendedProps.type;
     }
 
+    // 終了が60日より前の予約（クライアント側の自動掃除で誰でも削除可能にする）
+    function isOldEvent(d) {
+      return parseTs(d.end) < request.time - duration.value(60, 'd');
+    }
+
     match /events/{eventId} {
       allow read: if true;
       // 予約はログイン不要（匿名）。固定枠・音出し禁止・部のイベントは管理者のみ作成可。
@@ -88,7 +93,21 @@ service cloud.firestore {
         : (validEventShape(request.resource.data)
            && (timingUnchanged(resource.data, request.resource.data)
                || meetsTimeRule(request.resource.data)));
-      allow delete: if isProtectedType(resource.data) ? isAdmin() : true;
+      // 削除: 保護枠は管理者のみ。ただし60日より前の古い予約は自動掃除のため誰でも削除可。
+      allow delete: if isProtectedType(resource.data)
+        ? (isAdmin() || isOldEvent(resource.data))
+        : true;
+    }
+
+    // スロットロック: 二重予約を原子的に防ぐ 15分単位の占有ドキュメント。
+    // 占有型（確定・固定・部イベント・個人練習）のみ作成。update 不可が排他制御の要。
+    match /slotLocks/{slotId} {
+      allow read: if true;
+      allow create: if request.resource.data.type in ['confirmed', 'fixed', 'club-event', 'personal']
+        && request.resource.data.eventId is string;
+      allow update: if false;
+      // 予約の削除・移動時に解放する（匿名運用に合わせて誰でも削除可）。
+      allow delete: if true;
     }
 
     match /admins/{adminId} {
@@ -127,15 +146,27 @@ service cloud.firestore {
     }
 
     // バンド（バンド掲示板）: ログイン不要（予約と同じ匿名運用）。
-    // 作成は自由。更新は「名前・ジャンルの編集」か「解散」（status: disbanded への変更）のみ。
+    // 作成は自由。更新は「名前・演奏曲・本番日の編集」か「解散」（status: disbanded）のみ。
     // 代表者名(representative)と作成日時は変更不可。
+    // 削除は本番日(performanceDate)を過ぎたバンドの自動掃除のみ（誰でも可）。
+    function bandExpired(d) {
+      return d.performanceDate is string
+        && d.performanceDate.matches('\\d{4}-\\d{2}-\\d{2}')
+        && timestamp.date(
+             int(d.performanceDate.split('-')[0]),
+             int(d.performanceDate.split('-')[1]),
+             int(d.performanceDate.split('-')[2])
+           ) + duration.value(1, 'd') < request.time;
+    }
     match /bands/{bandId} {
       allow read: if true;
       allow create: if true;
       allow update: if
-        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'genre'])) ||
+        (request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(['name', 'songs', 'performanceDate'])) ||
         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']) &&
          request.resource.data.status == 'disbanded');
+      allow delete: if bandExpired(resource.data);
     }
 
     // 狙い表明（15分グリッド）: 予約と同じくログイン不要・誰でも宣言・削除できる。
