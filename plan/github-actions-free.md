@@ -69,5 +69,3 @@ Organization への Transfer では Secrets は引き継がれないため、Tra
 ## 注意
 - 公開リポジトリでは Actions ログも公開される。ログに認証情報を出力しないこと（現状のスクレイパーは出力していない）。
 - 60日間コミットが無いと GitHub がスケジュールを自動停止する。本ワークフローは毎晩JSONをコミットするため回避済み。
-- Transfer 後は Firebase Hosting のデプロイに使っている CI（`firebase-hosting-*.yml`）があれば、
-  そちらの Secrets（`FIREBASE_SERVICE_ACCOUNT` 等）も再設定が必要な場合がある。デプロイは現状ローカルの `firebase deploy` で行っているため影響は無いはず。
