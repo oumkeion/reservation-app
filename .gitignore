@@ -25,3 +25,6 @@ firestore-debug.log
 # Node
 node_modules/
 app/dist/
+
+# AI引き継ぎドキュメント（認証情報を含むためコミット禁止）
+context.md

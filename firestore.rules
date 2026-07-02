@@ -15,12 +15,80 @@ service cloud.firestore {
       return data.extendedProps.type in ['fixed', 'no-sound', 'club-event'];
     }
 
+    // ---- 通常枠（confirmed / request / personal）のサーバー側検証 ----
+    // クライアントは Date.toISOString() の UTC 文字列（YYYY-MM-DDTHH:MM:SS(.sss)Z）を書き込む。
+
+    function isIsoUtcString(s) {
+      return s is string && s.matches('\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z');
+    }
+
+    // ISO UTC 文字列 → timestamp
+    function parseTs(s) {
+      return timestamp.date(
+          int(s.split('T')[0].split('-')[0]),
+          int(s.split('T')[0].split('-')[1]),
+          int(s.split('T')[0].split('-')[2]))
+        + duration.time(
+          int(s.split('T')[1].split(':')[0]),
+          int(s.split('T')[1].split(':')[1]), 0, 0);
+    }
+
+    // ts が属する JST 暦日の 0:00（JST）を UTC timestamp で返す
+    function jstMidnight(ts) {
+      return timestamp.date(
+          (ts + duration.time(9, 0, 0, 0)).year(),
+          (ts + duration.time(9, 0, 0, 0)).month(),
+          (ts + duration.time(9, 0, 0, 0)).day())
+        - duration.time(9, 0, 0, 0);
+    }
+
+    function validEventShape(d) {
+      return d.title is string && d.title.size() > 0 && d.title.size() <= 200
+        && isIsoUtcString(d.start) && isIsoUtcString(d.end)
+        && parseTs(d.end) > parseTs(d.start)
+        && d.extendedProps.type in ['confirmed', 'request', 'personal']
+        && d.extendedProps.editor is string
+        && d.extendedProps.editor.size() > 0 && d.extendedProps.editor.size() <= 100
+        && (!('comment' in d.extendedProps)
+            || (d.extendedProps.comment is string && d.extendedProps.comment.size() <= 1000));
+    }
+
+    // 種別ごとの時間制約（validation.js と同じルールのサーバー側強制）
+    // confirmed: 開始が今から7日以内 / request: 使用日の1週間前 0:00〜9:00 JST のみ /
+    // personal: 使用日前日の 19:00 JST 以降
+    function meetsTimeRule(d) {
+      return (d.extendedProps.type == 'confirmed'
+              && parseTs(d.start) <= request.time + duration.value(7, 'd'))
+        || (d.extendedProps.type == 'request'
+              && request.time >= jstMidnight(parseTs(d.start)) - duration.value(7, 'd')
+              && request.time < jstMidnight(parseTs(d.start)) - duration.value(7, 'd')
+                                   + duration.time(9, 0, 0, 0))
+        || (d.extendedProps.type == 'personal'
+              && request.time >= jstMidnight(parseTs(d.start)) - duration.time(5, 0, 0, 0));
+    }
+
+    // 開始・終了・種別が変わらない編集（コメント等のみ）は時間制約を再チェックしない
+    function timingUnchanged(before, after) {
+      return after.start == before.start
+        && after.end == before.end
+        && after.extendedProps.type == before.extendedProps.type;
+    }
+
     match /events/{eventId} {
       allow read: if true;
-      // 予約はログイン不要（匿名）。固定枠・音出し禁止は管理者のみ作成可。
-      allow create: if isProtectedType(request.resource.data) ? isAdmin() : true;
-      // 削除・変更も同様。通常枠はクライアント側の本人確認(記入者名)で運用する（旧アプリと同じ方式）。
-      allow update, delete: if isProtectedType(resource.data) ? isAdmin() : true;
+      // 予約はログイン不要（匿名）。固定枠・音出し禁止・部のイベントは管理者のみ作成可。
+      // 通常枠は形式と種別ごとの時間制約をサーバー側でも検証する（脆弱性A対策）。
+      allow create: if isProtectedType(request.resource.data)
+        ? isAdmin()
+        : (validEventShape(request.resource.data) && meetsTimeRule(request.resource.data));
+      // 更新: 保護枠への昇格（type書き換え）も管理者のみ。通常枠は本人確認(記入者名)で運用しつつ、
+      // 日時・種別を変える編集には作成時と同じ時間制約を課す。
+      allow update: if (isProtectedType(resource.data) || isProtectedType(request.resource.data))
+        ? isAdmin()
+        : (validEventShape(request.resource.data)
+           && (timingUnchanged(resource.data, request.resource.data)
+               || meetsTimeRule(request.resource.data)));
+      allow delete: if isProtectedType(resource.data) ? isAdmin() : true;
     }
 
     match /admins/{adminId} {
