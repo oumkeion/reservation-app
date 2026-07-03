@@ -19,6 +19,7 @@ import {
   addRecurringFixedSlots,
   deleteRecurrenceGroup,
   cleanupOldEvents,
+  promoteEligibleRequests,
   SlotConflictError,
 } from '../../models/events'
 import { EVENT_TYPES } from '../../lib/eventTypes'
@@ -32,9 +33,11 @@ export function CalendarView({ profile, isAdmin }) {
   const { events, calendarEvents, error } = useEvents()
   const bands = useActiveBands()
 
-  // 起動時に一度だけ、60日より前の古い予約を掃除する（best-effort）
+  // 起動時に一度だけ、60日より前の古い予約を掃除し、
+  // 申請期間が過ぎて競合の無い希望枠を確定枠へ格上げする（どちらも best-effort）
   useEffect(() => {
     cleanupOldEvents()
+    promoteEligibleRequests()
   }, [])
   const {
     data: lhData,

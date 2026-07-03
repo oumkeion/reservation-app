@@ -23,17 +23,19 @@ export function ReserveDialog({ range, isAdmin, bands = [], onSave, onClose }) {
     ? [...MEMBER_SELECTABLE_TYPES, ...ADMIN_SELECTABLE_TYPES]
     : MEMBER_SELECTABLE_TYPES
 
-  // 確定枠はバンド一覧から選択のみ
-  const bandSelectOnly = type === EVENT_TYPES.CONFIRMED
+  // 確定枠・希望枠はバンド一覧から選択のみ（希望枠は競合なしなら自動で確定枠へ格上げされる）
+  const bandSelectOnly = type === EVENT_TYPES.CONFIRMED || type === EVENT_TYPES.REQUEST
   // 個人練習はバンド名不要（記入者名を表示名として使う）
   const isPersonal = type === EVENT_TYPES.PERSONAL
   const bandNames = [...bands.map((b) => b.name)].sort((a, b) => a.localeCompare(b, 'ja'))
   const noBands = bandSelectOnly && bandNames.length === 0
 
   const handleTypeChange = (nextType) => {
+    const wasSelectOnly = bandSelectOnly
+    const willSelectOnly = nextType === EVENT_TYPES.CONFIRMED || nextType === EVENT_TYPES.REQUEST
     setType(nextType)
-    // 確定枠に切り替えたとき、一覧に無い名前が残っていたらクリアして選択を促す
-    if (nextType === EVENT_TYPES.CONFIRMED && !bands.some((b) => b.name === title)) {
+    // 選択制に切り替えたとき、一覧に無い名前が残っていたらクリアして選択を促す
+    if (willSelectOnly && !wasSelectOnly && !bands.some((b) => b.name === title)) {
       setTitle('')
     }
   }
@@ -109,7 +111,13 @@ export function ReserveDialog({ range, isAdmin, bands = [], onSave, onClose }) {
         )}
         {noBands && (
           <p className="dialog-note">
-            確定枠は登録済みバンドからの選択制です。先に「バンド一覧」タブでバンドを登録してください。
+            確定枠・希望枠は登録済みバンドからの選択制です。先に「バンド一覧」タブでバンドを登録してください。
+          </p>
+        )}
+        {type === EVENT_TYPES.REQUEST && (
+          <p className="dialog-note">
+            希望枠は同じ時間に複数バンドが宣言できます。申請期間（使用日1週間前の0:00〜9:00）を過ぎて
+            競合が無ければ、自動で部室確定枠になります。
           </p>
         )}
         <label>

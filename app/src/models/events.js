@@ -315,6 +315,97 @@ export async function deleteRecurrenceGroup(group, deleterName) {
   return snap.size
 }
 
+// start/end 文字列 → 絶対時刻(ms)。ISO UTC(末尾Z)はそのまま、naive は JST 壁時計として解釈。
+function toMs(s) {
+  if (typeof s !== 'string') return new Date(s).getTime()
+  return (s.endsWith('Z') ? new Date(s) : new Date(`${s}+09:00`)).getTime()
+}
+
+// 希望枠の「申請期間の締切」= 使用日のちょうど1週間前の日の 09:00（JST）を ms で返す。
+// この時刻を過ぎた希望枠は格上げ判定の対象になる。
+function requestWindowEndMs(startIso) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Tokyo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date(toMs(startIso)))
+  const get = (t) => parts.find((p) => p.type === t)?.value
+  const usageMidnightJst = new Date(`${get('year')}-${get('month')}-${get('day')}T00:00:00+09:00`)
+  // 使用日0:00(JST) - 7日 + 9時間 = 申請日の 09:00(JST)
+  return usageMidnightJst.getTime() - 7 * 24 * 60 * 60 * 1000 + 9 * 60 * 60 * 1000
+}
+
+// 希望枠の自動格上げ（best-effort、起動時に一度呼ぶ）。
+// 申請期間（使用日1週間前 0:00〜9:00 JST）を過ぎた希望枠のうち、同じ時間帯に
+// 競合する他の予約（音出し禁止以外）が無いものを、部室確定枠へ格上げする。
+// 競合がある希望枠は抽選・話し合いが必要なため据え置く。
+export async function promoteEligibleRequests() {
+  try {
+    const snap = await getDocs(
+      query(collection(db, 'events'), where('start', '>=', cutoffIso())),
+    )
+    if (snap.empty) return 0
+    const all = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+    const now = Date.now()
+
+    // 各イベントが占有する15分スロットキー集合（音出し禁止は非占有＝空集合）。
+    // 希望枠は本来ロックを取らないが、競合判定のため占有枠とみなしてキーを求める。
+    const keysOf = (ev) => {
+      if (ev.extendedProps?.type === EVENT_TYPES.NO_SOUND) return []
+      return slotKeysFor({ start: ev.start, end: ev.end, type: EVENT_TYPES.CONFIRMED })
+    }
+
+    let promoted = 0
+    for (const req of all) {
+      if (req.extendedProps?.type !== EVENT_TYPES.REQUEST) continue
+      if (toMs(req.end) <= now) continue // 済んだ枠は対象外
+      if (now < requestWindowEndMs(req.start)) continue // まだ申請期間内
+
+      const myKeys = keysOf(req)
+      if (myKeys.length === 0) continue
+      const mySet = new Set(myKeys)
+
+      // 自分以外に同じスロットを占有する予約があれば競合＝格上げしない
+      const hasCompetition = all.some(
+        (e) => e.id !== req.id && keysOf(e).some((k) => mySet.has(k)),
+      )
+      if (hasCompetition) continue
+
+      // 競合なし → 確定枠へ格上げ（type変更＋ロック確保を同一バッチで原子的に）
+      const batch = writeBatch(db)
+      batch.update(doc(db, 'events', req.id), { 'extendedProps.type': EVENT_TYPES.CONFIRMED })
+      for (const k of myKeys) {
+        batch.set(
+          doc(db, 'slotLocks', k),
+          lockPayload({ eventId: req.id, type: EVENT_TYPES.CONFIRMED, editor: req.extendedProps?.editor }),
+        )
+      }
+      try {
+        await batch.commit()
+        promoted += 1
+        await addLog('希望枠を確定枠へ格上げ', {
+          editor: '自動処理',
+          before: summarize(req),
+          after: summarize({
+            ...req,
+            extendedProps: { ...req.extendedProps, type: EVENT_TYPES.CONFIRMED },
+          }),
+        })
+      } catch (err) {
+        // 競合（ロック既存）などで失敗した場合はスキップ
+        if (!(err && err.code === 'permission-denied')) {
+          console.warn('希望枠の格上げに失敗:', err)
+        }
+      }
+    }
+    return promoted
+  } catch (err) {
+    console.warn('希望枠の自動格上げに失敗しました:', err)
+    return 0
+  }
+}
+
 // 60日より前の予約を best-effort で削除（起動時に一度だけ呼ぶ）。ログは残さない。
 export async function cleanupOldEvents() {
   try {
