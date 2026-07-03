@@ -15,10 +15,9 @@ const TABS = [
   { id: 'bands', label: 'バンド一覧' },
   { id: 'journal', label: '部誌' },
   { id: 'logs', label: '操作ログ' },
+  // 固定枠申請: 申請状況は全員が見られる（承認・拒否の操作は管理者のみ）
+  { id: 'requests', label: '固定枠申請' },
 ]
-
-// 管理者だけに表示するタブ
-const ADMIN_TABS = [{ id: 'requests', label: '固定枠申請' }]
 
 function Legend() {
   return (
@@ -51,7 +50,7 @@ export default function App() {
       </header>
 
       <nav className="tabs">
-        {[...TABS, ...(isAdmin ? ADMIN_TABS : [])].map((t) => (
+        {TABS.map((t) => (
           <button
             key={t.id}
             className={tab === t.id ? 'tab active' : 'tab'}
@@ -77,8 +76,11 @@ export default function App() {
         )}
         {tab === 'journal' && <JournalBoard isAdmin={isAdmin} />}
         {tab === 'logs' && <LogView />}
-        {tab === 'requests' && isAdmin && (
-          <FixedSlotRequestsAdmin adminName={profile?.displayName || profile?.email} />
+        {tab === 'requests' && (
+          <FixedSlotRequestsAdmin
+            isAdmin={isAdmin}
+            adminName={profile?.displayName || profile?.email}
+          />
         )}
       </main>
     </div>

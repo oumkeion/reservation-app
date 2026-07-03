@@ -1,10 +1,12 @@
 // バンド登録ダイアログ（ログイン不要、予約と同じく手入力）
 import { useState } from 'react'
+import { BAND_CATEGORIES, DEFAULT_BAND_CATEGORY } from '../../models/bands'
 
 export function CreateBandDialog({ onSave, onClose }) {
   const [name, setName] = useState('')
   const [songs, setSongs] = useState('')
   const [performanceDate, setPerformanceDate] = useState('')
+  const [category, setCategory] = useState(DEFAULT_BAND_CATEGORY)
   const [representative, setRepresentative] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -19,6 +21,7 @@ export function CreateBandDialog({ onSave, onClose }) {
         name: name.trim(),
         songs: songs.trim(),
         performanceDate,
+        category,
         representative: representative.trim(),
       })
       onClose()
@@ -43,6 +46,16 @@ export function CreateBandDialog({ onSave, onClose }) {
             placeholder="（必須）"
             autoFocus
           />
+        </label>
+        <label>
+          カテゴリ
+          <select value={category} onChange={(e) => setCategory(e.target.value)}>
+            {BAND_CATEGORIES.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
         </label>
         <label>
           演奏する曲（任意）

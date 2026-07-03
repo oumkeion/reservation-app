@@ -1,10 +1,12 @@
 // バンド情報の編集ダイアログ（代表者名の一致で本人確認してから保存）
 import { useState } from 'react'
+import { BAND_CATEGORIES, DEFAULT_BAND_CATEGORY } from '../../models/bands'
 
 export function EditBandDialog({ band, onSave, onClose }) {
   const [name, setName] = useState(band.name)
   const [songs, setSongs] = useState(band.songs || '')
   const [performanceDate, setPerformanceDate] = useState(band.performanceDate || '')
+  const [category, setCategory] = useState(band.category || DEFAULT_BAND_CATEGORY)
   const [saving, setSaving] = useState(false)
 
   const handleSave = async () => {
@@ -26,6 +28,7 @@ export function EditBandDialog({ band, onSave, onClose }) {
         name: name.trim(),
         songs: songs.trim(),
         performanceDate,
+        category,
       })
       onClose()
     } catch (err) {
@@ -48,6 +51,16 @@ export function EditBandDialog({ band, onSave, onClose }) {
             onChange={(e) => setName(e.target.value)}
             autoFocus
           />
+        </label>
+        <label>
+          カテゴリ
+          <select value={category} onChange={(e) => setCategory(e.target.value)}>
+            {BAND_CATEGORIES.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
         </label>
         <label>
           演奏する曲（任意）

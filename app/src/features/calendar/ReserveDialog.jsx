@@ -1,6 +1,7 @@
 // 予約入力ダイアログ
 // ログイン不要: 記入者名は手入力（旧アプリと同じ）。
-// 確定枠(confirmed)のバンド名は「バンド一覧」から選択のみ。希望枠・個人練習は手入力。
+// 確定枠(confirmed)のバンド名は「バンド一覧」から選択のみ。希望枠は手入力。
+// 個人練習はバンド名不要（記入者名をカレンダー表示名に使う）。
 // 管理者ログイン中は固定枠・音出し禁止・部のイベントも選択可能。
 import { useState } from 'react'
 import {
@@ -24,6 +25,8 @@ export function ReserveDialog({ range, isAdmin, bands = [], onSave, onClose }) {
 
   // 確定枠はバンド一覧から選択のみ
   const bandSelectOnly = type === EVENT_TYPES.CONFIRMED
+  // 個人練習はバンド名不要（記入者名を表示名として使う）
+  const isPersonal = type === EVENT_TYPES.PERSONAL
   const bandNames = [...bands.map((b) => b.name)].sort((a, b) => a.localeCompare(b, 'ja'))
   const noBands = bandSelectOnly && bandNames.length === 0
 
@@ -36,13 +39,15 @@ export function ReserveDialog({ range, isAdmin, bands = [], onSave, onClose }) {
   }
 
   const handleSave = async () => {
-    if (!title.trim() || !editor.trim()) {
-      alert('バンド名と記入者名は必須です。')
+    if (isPersonal ? !editor.trim() : !title.trim() || !editor.trim()) {
+      alert(isPersonal ? '記入者名は必須です。' : 'バンド名と記入者名は必須です。')
       return
     }
     setSaving(true)
     try {
-      await onSave({ title: title.trim(), editor: editor.trim(), type, comment: comment.trim() })
+      // 個人練習はバンド名を持たないため、カレンダー表示名は記入者名にする
+      const eventTitle = isPersonal ? editor.trim() : title.trim()
+      await onSave({ title: eventTitle, editor: editor.trim(), type, comment: comment.trim() })
       onClose()
     } catch (err) {
       console.error('予約の追加に失敗:', err)
@@ -79,6 +84,7 @@ export function ReserveDialog({ range, isAdmin, bands = [], onSave, onClose }) {
             ))}
           </select>
         </label>
+        {!isPersonal && (
         <label>
           バンド名（必須）
           {bandSelectOnly ? (
@@ -100,6 +106,7 @@ export function ReserveDialog({ range, isAdmin, bands = [], onSave, onClose }) {
             />
           )}
         </label>
+        )}
         {noBands && (
           <p className="dialog-note">
             確定枠は登録済みバンドからの選択制です。先に「バンド一覧」タブでバンドを登録してください。
@@ -127,7 +134,7 @@ export function ReserveDialog({ range, isAdmin, bands = [], onSave, onClose }) {
           <button
             className="primary"
             onClick={handleSave}
-            disabled={saving || !title.trim() || !editor.trim()}
+            disabled={saving || !editor.trim() || (!isPersonal && !title.trim())}
           >
             {saving ? '保存中…' : '保存'}
           </button>

@@ -1,5 +1,6 @@
-// 固定枠 変更・キャンセル申請の承認一覧（管理者専用）
-// 未処理の申請を承認/拒否する。承認時に実際の固定枠を変更・削除する。
+// 固定枠 変更・キャンセル申請の一覧。
+// 申請状況（どのバンドが何を申請中か）は全員が閲覧できる。
+// 承認/拒否/削除の操作は管理者のみ（Firestore ルールでも強制）。承認時に実際の固定枠を変更・削除する。
 import { useEffect, useState } from 'react'
 import {
   subscribeFixedSlotRequests,
@@ -27,7 +28,7 @@ function fmt(iso) {
   })
 }
 
-export function FixedSlotRequestsAdmin({ adminName }) {
+export function FixedSlotRequestsAdmin({ isAdmin = false, adminName }) {
   const [requests, setRequests] = useState([])
   const [error, setError] = useState(false)
   const [busyId, setBusyId] = useState(null)
@@ -93,20 +94,24 @@ export function FixedSlotRequestsAdmin({ adminName }) {
       )}
       {req.note && <div className="req-detail">備考: {req.note}</div>}
       {req.status === REQUEST_STATUS.PENDING ? (
-        <div className="dialog-buttons">
-          <button className="primary" onClick={() => handleApprove(req)} disabled={busyId === req.id}>
-            承認
-          </button>
-          <button className="danger" onClick={() => handleReject(req)} disabled={busyId === req.id}>
-            拒否
-          </button>
-        </div>
+        isAdmin && (
+          <div className="dialog-buttons">
+            <button className="primary" onClick={() => handleApprove(req)} disabled={busyId === req.id}>
+              承認
+            </button>
+            <button className="danger" onClick={() => handleReject(req)} disabled={busyId === req.id}>
+              拒否
+            </button>
+          </div>
+        )
       ) : (
         <div className="req-resolved">
           {STATUS_LABEL[req.status]}（{req.resolvedBy || '—'}）
-          <button className="req-clear" onClick={() => deleteFixedSlotRequest(req.id)}>
-            一覧から消す
-          </button>
+          {isAdmin && (
+            <button className="req-clear" onClick={() => deleteFixedSlotRequest(req.id)}>
+              一覧から消す
+            </button>
+          )}
         </div>
       )}
     </li>

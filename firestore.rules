@@ -146,7 +146,7 @@ service cloud.firestore {
     }
 
     // バンド（バンド掲示板）: ログイン不要（予約と同じ匿名運用）。
-    // 作成は自由。更新は「名前・演奏曲・本番日の編集」か「解散」（status: disbanded）のみ。
+    // 作成は自由。更新は「名前・演奏曲・本番日・カテゴリの編集」か「解散」（status: disbanded）のみ。
     // 代表者名(representative)と作成日時は変更不可。
     // 削除は本番日(performanceDate)を過ぎたバンドの自動掃除のみ（誰でも可）。
     function bandExpired(d) {
@@ -163,7 +163,7 @@ service cloud.firestore {
       allow create: if true;
       allow update: if
         (request.resource.data.diff(resource.data).affectedKeys()
-           .hasOnly(['name', 'songs', 'performanceDate'])) ||
+           .hasOnly(['name', 'songs', 'performanceDate', 'category'])) ||
         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']) &&
          request.resource.data.status == 'disbanded');
       allow delete: if bandExpired(resource.data);

@@ -1,5 +1,6 @@
 // 狙い表明カレンダー: 「この時間を狙っている」という宣言を15分単位で可視化する
 // 予約カレンダーとは別の独立したカレンダー（同じ枠を複数バンドが宣言できる）。
+// 確定済みの予約（本カレンダーの予定）も参考として重ねて表示する（閲覧専用）。
 import { useState, useCallback } from 'react'
 import FullCalendar from '@fullcalendar/react'
 import timeGridPlugin from '@fullcalendar/timegrid'
@@ -10,10 +11,17 @@ import { IntentDialog } from './IntentDialog'
 import { IntentDetailDialog } from './IntentDetailDialog'
 import { addIntent, deleteIntent } from '../../models/intents'
 import { useLectureHall } from '../lecture-hall/useLectureHall'
+import { useEvents } from '../calendar/useEvents'
 
 export function IntentBoard() {
   const { intents, calendarIntents, error } = useIntents()
   const { noSoundEvents } = useLectureHall()
+  // 確定済みの予約（クリック不可の参考表示。狙い表明と区別できるよう本来の配色のまま薄く表示）
+  const { calendarEvents: reservedEvents } = useEvents()
+  const reservedReadonly = reservedEvents.map((e) => ({
+    ...e,
+    classNames: ['intent-reserved'],
+  }))
   const [selectedRange, setSelectedRange] = useState(null)
   const [selectedIntent, setSelectedIntent] = useState(null)
 
@@ -46,6 +54,7 @@ export function IntentBoard() {
       <h2>狙い表明カレンダー</h2>
       <p className="intent-hint">
         まだ予約していないけれど「この時間を使いたい」という意思表示です。複数のバンドが同じ枠を宣言できます。
+        確定済みの予約も参考として薄い色で表示されます（このカレンダーからは操作できません）。
       </p>
       {error && (
         <p className="error-bar">狙い表明データの読み込みに失敗しました。再読み込みしてください。</p>
@@ -71,7 +80,7 @@ export function IntentBoard() {
         selectable
         selectMirror
         slotEventOverlap={false}
-        events={[...calendarIntents, ...noSoundEvents]}
+        events={[...calendarIntents, ...reservedReadonly, ...noSoundEvents]}
         select={handleSelect}
         eventClick={handleEventClick}
         headerToolbar={{

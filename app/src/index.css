@@ -240,12 +240,35 @@ button:disabled {
   font-size: 1rem;
 }
 
-.band-genre {
+.band-category {
   font-size: 0.8rem;
   color: #1976d2;
   background: #e3f2fd;
   border-radius: 10px;
   padding: 1px 8px;
+}
+
+/* カテゴリ絞り込みチップ */
+.band-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 12px;
+}
+
+.band-filter-chip {
+  font-size: 0.85rem;
+  border: 1px solid #ccc;
+  border-radius: 14px;
+  background: #fff;
+  padding: 3px 12px;
+  cursor: pointer;
+}
+
+.band-filter-chip.active {
+  background: #1976d2;
+  border-color: #1976d2;
+  color: #fff;
 }
 
 .band-perf {
@@ -655,9 +678,49 @@ button:disabled {
   margin: 0 4px 0 10px;
 }
 
+/* カレンダーのイベント文字は常に黒（パステル背景に白文字は読みにくいため） */
+.fc .fc-event,
+.fc .fc-event-main,
+.fc .fc-event-time,
+.fc .fc-event-title {
+  color: #000;
+}
+
+/* 15分スロットの高さを圧縮してカレンダー全体を約1:1の比率にする
+   （06:00〜22:00 = 64スロット × 15px ≒ 960px）。
+   FullCalendar が実行時に注入する同一詳細度のスタイルに勝つため !important が必要 */
+.fc .fc-timegrid-slot {
+  height: 15px !important;
+  /* FullCalendar は空セルに ::before で nbsp を入れるため、
+     その行ボックスが最小高さにならないよう line-height も詰める */
+  line-height: 15px;
+}
+
+/* 時刻ラベル（6時 など）の行高が行全体を押し広げないよう詰める */
+.fc .fc-timegrid-slot-label-cushion {
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
+/* 狙い表明カレンダー上の確定済み予約（参考表示・操作不可） */
+.intent-reserved {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
 /* スマホ */
 @media (max-width: 600px) {
   .app-header h1 {
     font-size: 1rem;
+  }
+
+  /* 日付ヘッダー（7/3(金) など）が隣の列と重ならないよう、
+     縮小して「日付」「(曜日)」の2行に折り返す */
+  .fc .fc-col-header-cell-cushion {
+    font-size: 0.68rem;
+    line-height: 1.15;
+    white-space: normal;
+    word-break: break-all;
+    padding: 2px 0;
   }
 }
