@@ -79,6 +79,8 @@ export function IntentBoard() {
         slotLabelInterval="01:00"
         selectable
         selectMirror
+        longPressDelay={250}
+        selectLongPressDelay={250}
         slotEventOverlap={false}
         events={[...calendarIntents, ...reservedReadonly, ...noSoundEvents]}
         select={handleSelect}

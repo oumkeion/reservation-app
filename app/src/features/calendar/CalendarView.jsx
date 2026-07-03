@@ -155,6 +155,8 @@ export function CalendarView({ profile, isAdmin }) {
         slotLabelInterval="01:00"
         selectable
         selectMirror
+        longPressDelay={250}
+        selectLongPressDelay={250}
         events={mergedEvents}
         select={handleSelect}
         eventClick={handleEventClick}
